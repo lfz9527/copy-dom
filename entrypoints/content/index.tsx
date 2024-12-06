@@ -2,25 +2,27 @@ import ReactDOM from "react-dom/client";
 import React from "react";
 import { ContentScriptContext } from "wxt/client";
 import HoverElement from "../components/hover-element";
+import utils from "@/entrypoints/utils/index";
 import "./styles.css";
 
 export default defineContentScript({
   matches: ["*://*/*"],
   cssInjectionMode: "ui",
   async main(ctx) {
-    console.log("插件加载~");
+    utils.doLog("脚本加载成功");
     const comHover = await createShadowUi(ctx);
-    comHover.mount();
   },
 });
 
-function createShadowUi(ctx: ContentScriptContext) {
-  return createShadowRootUi(ctx, {
+async function createShadowUi(ctx: ContentScriptContext) {
+  const hoverMask =  await createShadowRootUi(ctx, {
     name: "active-copy-hover",
     position: "inline",
     anchor: "body",
+    isolateEvents: true,
     onMount(container) {
       const wrapper = document.createElement("div");
+      wrapper.id = "app";
       container.append(wrapper);
 
       const root = ReactDOM.createRoot(wrapper);
@@ -33,4 +35,9 @@ function createShadowUi(ctx: ContentScriptContext) {
       elements?.wrapper.remove();
     },
   });
+  hoverMask.mount();
+
+  hoverMask.shadowHost
+
+  return hoverMask
 }

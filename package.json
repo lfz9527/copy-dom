@@ -15,11 +15,14 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "css-tree": "^3.0.1",
+    "parse5": "^7.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.280",
+    "@types/css-tree": "^2.3.9",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@wxt-dev/module-react": "^1.1.1",
