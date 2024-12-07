@@ -87,7 +87,6 @@ const STYLE_WHITELIST = [
 interface StyleNode {
   type: "Element";
   tagName: string;
-  className?: string;
   "data-class-id": string;
   styles: {
     type: "StyleSheet";
@@ -104,12 +103,7 @@ interface StyleNode {
 const CLASS_PREFIX = "JY-SITE-COM";
 let index = -1;
 
-// 修改 generateDataClassId 函数，添加缓存
-let dataClassIdCache = new WeakMap<HTMLElement, string>();
 const generateDataClassId = (el: HTMLElement): string => {
-  const cached_dataClassId = dataClassIdCache.get(el);
-  if (cached_dataClassId) return cached_dataClassId;
-
   index++;
   const random = Math.random().toString(36).substring(2, 8);
   const classNames = el.className
@@ -117,50 +111,33 @@ const generateDataClassId = (el: HTMLElement): string => {
     : [];
 
   if (el.id) {
-    classNames.push(`id_${el.id}`);
+    classNames.push(`${el.id}`);
   }
 
   const suffix = classNames.length > 0 ? "_" + classNames.join("_") : "";
   const dataClassId = `${CLASS_PREFIX}${suffix}#${random}_${el.tagName}_${index}`;
 
-  dataClassIdCache.set(el, dataClassId);
   return dataClassId;
-};
-
-// 克隆元素
-const cloneElement = (el: HTMLElement): HTMLElement => {
-  const clonedEl = el.cloneNode(true) as HTMLElement;
-
-  // 设置 data-class-id
-  const dataClassId = generateDataClassId(el);
-  clonedEl.setAttribute("data-class-id", dataClassId);
-
-  Array.from(clonedEl.children).forEach((child) => {
-    if (child instanceof HTMLElement) {
-      const processedChild = cloneElement(child);
-      child.parentNode?.replaceChild(processedChild, child);
-    }
-  });
-
-  return clonedEl;
 };
 
 // 收集样式树
 const collectStyleTree = (el: HTMLElement): StyleNode => {
-  // 2. 获取计算样式
+  // 获取计算样式
   const rules = resolveStyleContent(el);
   const dataClassId = generateDataClassId(el);
 
-  // 4. 递归处理子元素
+  // 给每个节点 添加 dataClassId
+  el.setAttribute("data-class-id", dataClassId);
+
+  // 递归处理子元素
   const children = Array.from(el.children)
     .filter((child): child is HTMLElement => child instanceof HTMLElement)
     .map((child) => collectStyleTree(child));
 
-  // 5. 构建并返回节点
+  // 构建并返回节点
   return {
     type: "Element",
     tagName: el.tagName.toLowerCase(),
-    className: el.className || undefined,
     "data-class-id": dataClassId!,
     styles: {
       type: "StyleSheet",
@@ -170,7 +147,7 @@ const collectStyleTree = (el: HTMLElement): StyleNode => {
   };
 };
 
-// 优化 resolveStyleContent 函数
+// 处理获得的构造函数
 const resolveStyleContent = (el: HTMLElement) => {
   const rules: StyleNode["styles"]["rules"] = [];
   const computedStyle = window.getComputedStyle(el);
@@ -190,9 +167,8 @@ const resolveStyleContent = (el: HTMLElement) => {
 // 优化主方法
 const getStyle = (el: HTMLElement) => {
   index = -1;
-  dataClassIdCache = new WeakMap<HTMLElement, string>(); // 清除缓存
   const tree = collectStyleTree(el);
-  const elements = cloneElement(el);
+  const elements = el.cloneNode(true) as HTMLElement;
 
   console.log("elements", elements);
 
