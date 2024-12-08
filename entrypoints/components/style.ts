@@ -130,24 +130,29 @@ const generateDataClassId = (el: HTMLElement): string => {
   return dataClassId;
 };
 
-// 常见的节点类型常量
-const NodeTypes = {
-  ELEMENT_NODE: 1, // 元素节点 如 <div>
-  ATTRIBUTE_NODE: 2, // 属性节点 如 class="example"
-  TEXT_NODE: 3, // 文本节点 如 Hello World
-  CDATA_SECTION_NODE: 4, // CDATA 节点 如 <![CDATA[...]]>
-  PROCESSING_INSTRUCTION_NODE: 7, // 处理指令节点 如 <?xml ...?>
-  COMMENT_NODE: 8, // 注释节点 如 <!-- ... -->
-  DOCUMENT_NODE: 9, // document 节点
-  DOCUMENT_TYPE_NODE: 10, // DOCTYPE 节点 如 <!DOCTYPE html>
-  DOCUMENT_FRAGMENT_NODE: 11, // DocumentFragment 节点
-} as const;
-
 // 克隆元素，这里采用递归方式，主要是为了不影响页面的节点，而在节点添加属性
 const cloneElement = (el: HTMLElement): HTMLElement => {
   const dataClassId = generateDataClassId(el);
   const clonedEl = el.cloneNode(false) as HTMLElement;
   clonedEl.setAttribute(DATA_CLASS_ID, dataClassId);
+
+  // 处理资源路径
+  if (el instanceof HTMLImageElement && el.src) {
+    // 处理图片src
+    (clonedEl as HTMLImageElement).src = el.src;
+  } else if (el instanceof HTMLAnchorElement && el.href) {
+    // 处理链接href
+    (clonedEl as HTMLAnchorElement).href = el.href;
+  } else if (el instanceof HTMLLinkElement && el.href) {
+    // 处理link标签
+    (clonedEl as HTMLLinkElement).href = el.href;
+  } else if (el instanceof HTMLScriptElement && el.src) {
+    // 处理script标签
+    (clonedEl as HTMLScriptElement).src = el.src;
+  } else if (el instanceof HTMLSourceElement && el.src) {
+    // 处理source标签
+    (clonedEl as HTMLSourceElement).src = el.src;
+  }
 
   // 处理所有类型的子节点
   Array.from(el.childNodes).forEach((child) => {
@@ -311,12 +316,18 @@ const getStyle = (el: HTMLElement) => {
 
   index = -1;
   elementData = new WeakMap<HTMLElement, string>();
+  // 克隆 dom
   const clonedEl = cloneElement(el);
+  // 生成css 树
   const cssTree = collectStyleTree(el);
+  // 处理dome 结构
   const elements = formatElement(clonedEl);
+  // css 树生成 css 样式表
   const cssString = generateCSS(cssTree);
+  // css + dom 结构 生成完整的html 文档
   const fullHtml = generateComponentTree({ css: cssString, html: elements });
 
+  // 在新的页面打开完整的html文件
   openFullHtmlNewTab(fullHtml);
 
   console.log("clonedEl", clonedEl);
