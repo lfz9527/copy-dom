@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import * as parse5 from "parse5";
+import { useEffect, useState, useRef } from "react";
 import getStyle from "./style";
 
 const HoverElement = () => {
@@ -10,7 +9,7 @@ const HoverElement = () => {
     left: 0,
   });
   // 添加一个状态来追踪是否启用了光标样式
-  const [isCursorEnabled, setIsCursorEnabled] = useState(false);
+  const isCursorEnabled = useRef<boolean>(false);
   const [selectDom, setSelectDom] = useState(null);
 
   useEffect(() => {
@@ -32,7 +31,7 @@ const HoverElement = () => {
   }, []);
 
   function toggleCursor() {
-    if (!isCursorEnabled) {
+    if (!isCursorEnabled.current) {
       // 启用光标样式
       document.body.style.cursor = "crosshair";
       // 为所有可能被排除的元素（如按钮等）添加样式
@@ -52,7 +51,8 @@ const HoverElement = () => {
         styleElement.remove();
       }
     }
-    setIsCursorEnabled(!isCursorEnabled);
+
+    isCursorEnabled.current = !isCursorEnabled.current;
   }
 
   function createHover(e: any) {
@@ -67,18 +67,26 @@ const HoverElement = () => {
       left: left,
     });
   }
+
+  useEffect(() => {
+    if (!isCursorEnabled.current && selectDom) {
+      setSelectDom(null);
+      const ast = getStyle(selectDom);
+
+      // 重新设置 cursor 为 crosshair
+      toggleCursor();
+    }
+  }, [selectDom, isCursorEnabled.current]);
+
   // 在点击事件中使用
   function clickDom(e: any) {
     e.preventDefault();
     e.stopPropagation();
-
     const targetElement = e.target;
     setSelectDom(targetElement);
 
-    const ast =  getStyle(targetElement)
-
-    console.log('ast',ast)
-
+    // 恢复默认 cursor 值
+    toggleCursor();
   }
 
   return (
