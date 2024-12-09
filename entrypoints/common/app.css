@@ -1,0 +1,40 @@
+.app-wrap-select{
+  position: fixed;
+  right: 20px;
+  top: 20px;
+
+  display: flex;
+  gap: 10px;
+
+  background-color: rgba(255, 255, 255, 1);
+  border: 1px solid #d9d9d9;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+
+button{
+  font-size: 14px;
+  height: 32px;
+  padding: 4px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  box-sizing: border-box;
+}
+button:hover{
+  opacity: 0.8;
+}
+
+button.primary{
+  background-color: #1677ff;
+  border-color: #1677ff;
+
+  color: #fff;
+}
+button.second{
+  background-color: #fff;
+  border-color:  #d9d9d9;
+  color: rgba(0, 0, 0, 0.88);
+}

@@ -1,7 +1,12 @@
-import { useEffect, useState, useRef } from "react";
-import getStyle from "./style";
+import React, { useEffect, useState, useRef } from "react";
+import { getElPosition } from "../utils";
+import Mask from "./mask";
 
-const HoverElement = () => {
+interface Prop {
+  onChange?: (el: HTMLElement) => void;
+}
+
+const HoverElement: React.FC<Prop> = ({ onChange }) => {
   const [post, setPost] = useState({
     width: 0,
     height: 0,
@@ -21,12 +26,11 @@ const HoverElement = () => {
       document.removeEventListener("mousemove", createHover);
       document.removeEventListener("click", clickDom, true);
 
+      isCursorEnabled.current = true;
       // 在组件卸载时清理样式
-      const styleElement = document.getElementById("custom-cursor-style");
-      if (styleElement) {
-        styleElement.remove();
-      }
-      document.body.style.cursor = "";
+      toggleCursor();
+
+      console.log("组件卸载");
     };
   }, []);
 
@@ -57,23 +61,20 @@ const HoverElement = () => {
 
   function createHover(e: any) {
     // 获取元素的尺寸和位置信息
-    const { width, height, top, left } =
-      (e?.target as HTMLElement)?.getBoundingClientRect() || {};
+    const { width, height, top, left } = getElPosition(e?.target);
 
     setPost({
       width,
       height,
-      top: top + window.scrollY,
-      left: left,
+      top,
+      left,
     });
   }
 
   useEffect(() => {
     if (!isCursorEnabled.current && selectDom) {
       setSelectDom(null);
-      const ast = getStyle(selectDom);
-
-      // 重新设置 cursor 为 crosshair
+      onChange && onChange(selectDom);
       toggleCursor();
     }
   }, [selectDom, isCursorEnabled.current]);
@@ -82,39 +83,16 @@ const HoverElement = () => {
   function clickDom(e: any) {
     e.preventDefault();
     e.stopPropagation();
-    const targetElement = e.target;
-    setSelectDom(targetElement);
+    setSelectDom(e.target);
 
     // 恢复默认 cursor 值
     toggleCursor();
   }
 
   return (
-    <svg
-      id="_hover_svg"
-      width={post.width}
-      height={post.height}
-      style={{
-        pointerEvents: "none",
-        position: "absolute",
-        top: post.top,
-        left: post.left,
-        zIndex: 99999,
-      }}
-      viewBox={`0 0 ${post.width} ${post.height}`}
-    >
-      <rect
-        style={{
-          stroke: "red",
-          fill: "#ffc0cb66",
-          strokeWidth: 2,
-          strokeOpacity: 1 /* 确保边框不透明 */,
-        }}
-        fill="none"
-        width="100%"
-        height="100%"
-      ></rect>
-    </svg>
+    <Mask
+      post={post}
+    />
   );
 };
 export default HoverElement;

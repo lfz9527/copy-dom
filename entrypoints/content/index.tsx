@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom/client";
-import React from "react";
 import { ContentScriptContext } from "wxt/client";
-import HoverElement from "../components/hover-element";
+// import HoverElement from "../components/hover-element";
+import App from "../common/App";
 import utils from "@/entrypoints/utils/index";
 import "./styles.css";
 
@@ -16,7 +16,7 @@ export default defineContentScript({
 
 async function createShadowUi(ctx: ContentScriptContext) {
   const hoverMask =  await createShadowRootUi(ctx, {
-    name: "active-copy-hover",
+    name: "jy-copy-dom",
     position: "inline",
     anchor: "body",
     isolateEvents: true,
@@ -24,9 +24,8 @@ async function createShadowUi(ctx: ContentScriptContext) {
       const wrapper = document.createElement("div");
       wrapper.id = "app";
       container.append(wrapper);
-
       const root = ReactDOM.createRoot(wrapper);
-      root.render(<HoverElement />);
+      root.render(<App />);
 
       return { root, wrapper };
     },
@@ -36,8 +35,6 @@ async function createShadowUi(ctx: ContentScriptContext) {
     },
   });
   hoverMask.mount();
-
-  hoverMask.shadowHost
-
   return hoverMask
 }
+ 
