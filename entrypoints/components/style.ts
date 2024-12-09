@@ -129,6 +129,17 @@ const STYLE_CONFIG: StyleConfig = {
   "scroll-snap-type": { default: "none", inherited: false, filter: true },
   "scroll-snap-align": { default: "none", inherited: false, filter: true },
   "overscroll-behavior": { default: "auto", inherited: false, filter: true },
+
+  // placeholder 特有属性
+  "::placeholder-shown": { default: "false", inherited: false },
+  "placeholder-color": { default: "", inherited: false },
+
+  // selection 特有属性
+  "::selection-color": { default: "", inherited: false },
+  "::selection-background": { default: "transparent", inherited: false },
+
+  // before/after 特有属性
+  content: { default: "none", inherited: false },
 } as const;
 
 /** 从配置中派生其他常量  */
@@ -158,7 +169,8 @@ const PROPERTY_DEPENDENCIES = {
       !rules.some(
         (rule) => rule.property === "border-width" && rule.value === "0px"
       ),
-    properties: (prop: string) => prop.startsWith("border") && prop !== "border-radius",
+    properties: (prop: string) =>
+      prop.startsWith("border") && prop !== "border-radius",
   },
   "text-decoration": {
     condition: (rules: StyleNode["styles"]["rules"]) =>
@@ -232,7 +244,26 @@ const generateDataClassId = (el: HTMLElement): string => {
   return dataClassId;
 };
 
-// 克隆元素，这里采用递归方式，主要是为了不影响页面的节点，而在节点添加属性
+// 辅助函数：转换伪类/伪元素名称为有效的 dataset key
+const pseudoToDatasetKey = (pseudo: string): string => {
+  // 移除 : 和 :: 前缀，并将剩余部分转为驼峰式
+  return (
+    "pseudo" +
+    pseudo.replace(/:{1,2}/, "").replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+  );
+};
+
+// 辅助函数：从 dataset key 还原伪类/伪元素名称
+const datasetKeyToPseudo = (key: string): string => {
+  const name = key.replace("pseudo", "");
+  // 检查是否是伪元素（根据 PSEUDO_CONFIG 中的定义）
+  const isPseudoElement = Object.keys(PSEUDO_CONFIG).some(
+    (p) => p.startsWith("::") && p.slice(2).toLowerCase() === name.toLowerCase()
+  );
+  return `${isPseudoElement ? "::" : ":"}${name}`;
+};
+
+// 克隆元素，包括伪类/伪元素样式
 const cloneElement = (el: HTMLElement): HTMLElement => {
   const dataClassId = generateDataClassId(el);
   const clonedEl = el.cloneNode(false) as HTMLElement;
@@ -256,11 +287,11 @@ const cloneElement = (el: HTMLElement): HTMLElement => {
     (clonedEl as HTMLSourceElement).src = el.src;
   }
 
-  // 处理所有类型的子节点
-  Array.from(el.childNodes).forEach((child) => {
+  // 处理子节点
+  Array.from(el.childNodes).forEach(child => {
     switch (child.nodeType) {
       case Node.ELEMENT_NODE:
-        // 元素节点需要递归处理
+        // 元素点需要递归处理
         clonedEl.appendChild(cloneElement(child as HTMLElement));
         break;
       case Node.TEXT_NODE:
@@ -309,7 +340,7 @@ const getInheritedStyles = (el: HTMLElement): Record<string, string> => {
   const inheritedStyles: Record<string, string> = {};
   const currentEl = el.parentElement;
 
-  // 如果没有父元素，返回空对象
+  // 果没有父元素，返回空对象
   if (!currentEl) return inheritedStyles;
   // 获取所有继承属性的当前计算值
   const computedStyle = window.getComputedStyle(currentEl);
@@ -486,15 +517,12 @@ const resolvePseudoStyle = (el: HTMLElement): StyleNode["styles"]["rules"] => {
 
     // 获取带伪类/伪元素的计算样式
     const pseudoStyle = window.getComputedStyle(el, pseudo);
-    const normalStyle = window.getComputedStyle(el);
 
     // 遍历所有样式属性
     STYLE_WHITELIST.forEach((property) => {
       const pseudoValue = pseudoStyle.getPropertyValue(property).trim();
-      const normalValue = normalStyle.getPropertyValue(property).trim();
-
       // 只收集与普通状态不同且非空的样式
-      if (pseudoValue !== normalValue && pseudoValue !== "") {
+      if (pseudoValue !== "") {
         // 特殊处理某些伪类
         switch (pseudo) {
           case ":hover":
@@ -596,9 +624,10 @@ const resolveStyleContent = (el: HTMLElement) => {
     return filteredRules;
   };
 
-
   // 收集伪类和伪元素样式
   const pseudoRules = resolvePseudoStyle(el);
+  console.log("pseudoRules", pseudoRules);
+
   rules = [...rules, ...pseudoRules];
 
   // 前面进行过滤时 可能也会产生默认值，所以最后再处理默认值
@@ -623,7 +652,7 @@ const generateCSS = (node: StyleNode): string => {
   const normalRules: StyleNode["styles"]["rules"] = [];
   const pseudoRules: Record<string, StyleNode["styles"]["rules"]> = {};
 
-  node.styles.rules.forEach((rule) => {
+  node.styles.rules.forEach(rule => {
     if (rule.pseudo) {
       pseudoRules[rule.pseudo] = pseudoRules[rule.pseudo] || [];
       pseudoRules[rule.pseudo].push(rule);
@@ -634,7 +663,7 @@ const generateCSS = (node: StyleNode): string => {
 
   // 生成普通样式
   const normalStyles = normalRules
-    .filter((rule) => rule.value !== "")
+    .filter(rule => rule.value !== "")
     .map(ruleToString)
     .join("\n  ");
 
@@ -645,7 +674,7 @@ const generateCSS = (node: StyleNode): string => {
   // 生成伪类/伪元素样式
   Object.entries(pseudoRules).forEach(([pseudo, rules]) => {
     const pseudoStyles = rules
-      .filter((rule) => rule.value !== "")
+      .filter(rule => rule.value !== "")
       .map(ruleToString)
       .join("\n  ");
 
@@ -655,7 +684,7 @@ const generateCSS = (node: StyleNode): string => {
   });
 
   // 递归处理子节点
-  node.children.forEach((child) => {
+  node.children.forEach(child => {
     css += generateCSS(child);
   });
 
@@ -667,17 +696,18 @@ const formatElement = (el: HTMLElement): HTMLElement => {
   // 获取DATA_CLASS_ID并设置为class
   const dataClassId = el.getAttribute(DATA_CLASS_ID);
 
-  // 删除这些属性
-  ["class", "id", "style", DATA_CLASS_ID].forEach((attr) => {
+  // 删除属性
+  ["class", "id", "style", DATA_CLASS_ID].forEach(attr => {
     el.removeAttribute(attr);
   });
 
-  // 重新设置新的类名
+  // 重新设置类名
   if (dataClassId) {
     el.className = dataClassId;
   }
+
   // 递归处理子元素
-  Array.from(el.children).forEach((child) => {
+  Array.from(el.children).forEach(child => {
     if (child instanceof HTMLElement) {
       formatElement(child);
     }
