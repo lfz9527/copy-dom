@@ -1,205 +1,152 @@
-// 样式白名单
-const STYLE_WHITELIST = [
+import utils from "../utils";
+
+interface StyleConfig {
+  [key: string]: {
+    default: string; // 默认值
+    inherited: boolean; // 是否为继承属性
+    filter?: boolean; // 是否需要过滤默认值
+  };
+}
+
+const STYLE_CONFIG: StyleConfig = {
   // 布局相关
-  "display",
-  "position",
-  "top",
-  "right",
-  "bottom",
-  "left",
-  "float",
-  "clear",
-  "z-index",
+  display: { default: "inline", inherited: false },
+  position: { default: "static", inherited: false, filter: true },
+  top: { default: "auto", inherited: false, filter: true },
+  right: { default: "auto", inherited: false, filter: true },
+  bottom: { default: "auto", inherited: false, filter: true },
+  left: { default: "auto", inherited: false, filter: true },
+  float: { default: "none", inherited: false, filter: true },
+  clear: { default: "none", inherited: false, filter: true },
+  "z-index": { default: "auto", inherited: false, filter: true },
+  "box-sizing": { default: "content-box", inherited: false, filter: true },
 
   // 盒模型
-  "width",
-  "height",
-  "max-width",
-  "max-height",
-  "min-width",
-  "min-height",
-  "margin",
-  "margin-top",
-  "margin-right",
-  "margin-bottom",
-  "margin-left",
-  "padding",
-  "padding-top",
-  "padding-right",
-  "padding-bottom",
-  "padding-left",
+  width: { default: "auto", inherited: false, filter: true },
+  height: { default: "auto", inherited: false, filter: true },
+  margin: { default: "0px", inherited: false, filter: true },
+  padding: { default: "0px", inherited: false, filter: true },
 
   // 边框
-  "border",
-  "border-width",
-  "border-style",
-  "border-color",
-  "border-radius",
+  "border-style": { default: "none", inherited: false, filter: true },
+  "border-width": { default: "0px", inherited: false, filter: true },
+  "border-color": { default: "", inherited: false, filter: true },
+  "border-radius": { default: "0px", inherited: false, filter: true },
 
   // Flex布局
-  "flex",
-  "flex-direction",
-  "flex-wrap",
-  "flex-flow",
-  "justify-content",
-  "align-items",
-  "align-content",
-  "gap",
-
-  // Grid布局
-  "grid",
-  "grid-template-columns",
-  "grid-template-rows",
-  "grid-gap",
-  "grid-column",
-  "grid-row",
+  flex: { default: "0 1 auto", inherited: false, filter: true },
+  "flex-direction": { default: "row", inherited: false, filter: true },
+  "flex-wrap": { default: "nowrap", inherited: false, filter: true },
+  "flex-flow": { default: "row nowrap", inherited: false, filter: true },
+  "justify-content": { default: "normal", inherited: false, filter: true },
+  "align-items": { default: "normal", inherited: false, filter: true },
+  "align-content": { default: "normal", inherited: false, filter: true },
+  gap: { default: "normal", inherited: false, filter: true },
 
   // 文字样式
-  "font-family",
-  "font-size",
-  "font-weight",
-  "line-height",
-  "color",
-  "text-align",
-  "text-decoration",
-  "text-transform",
-  "letter-spacing",
+  "font-size": { default: "16px", inherited: true },
+  "font-weight": { default: "normal", inherited: true, filter: true },
+  "line-height": { default: "normal", inherited: true, filter: true },
+  color: { default: "rgb(0, 0, 0)", inherited: true, filter: true },
+  "text-align": { default: "start", inherited: true, filter: true },
+  "text-decoration": { default: "none", inherited: false, filter: true },
+  "text-decoration-line": { default: "none", inherited: false, filter: true },
+  "text-transform": { default: "none", inherited: true, filter: true },
+  "letter-spacing": { default: "normal", inherited: true, filter: true },
 
   // 背景
-  "background",
-  "background-color",
-  "background-image",
-  "background-repeat",
-  "background-position",
-  "background-size",
+  // background: { default: "none", inherited: false, filter: true },
+  "background-clip": { default: "border-box", inherited: false, filter: true },
+  "background-color": {
+    default: "transparent",
+    inherited: false,
+    filter: true,
+  },
+  "background-image": { default: "none", inherited: false, filter: true },
+  "background-origin": {
+    default: "padding-box",
+    inherited: false,
+    filter: true,
+  },
+  "background-position-y": { default: "0%", inherited: false, filter: true },
+  "background-position-x": { default: "0%", inherited: false, filter: true },
+  "background-repeat": { default: "repeat", inherited: false, filter: true },
+  "background-size": { default: "auto", inherited: false, filter: true },
+  "backdrop-filter": { default: "none", inherited: false, filter: true },
 
   // 其他视觉效果
-  "opacity",
-  "box-shadow",
-  "transform",
-  "visibility",
-  "overflow",
-  "cursor",
-] as const;
+  opacity: { default: "1", inherited: false, filter: true },
+  "box-shadow": { default: "none", inherited: false, filter: true },
+  transform: { default: "none", inherited: false, filter: true },
+  visibility: { default: "visible", inherited: true, filter: true },
+  cursor: { default: "auto", inherited: true, filter: true },
 
-// 这是一个默认值，列表如果样式值为默认值，则不收集样式
-const DEFAULT_STYLES: Partial<
-  Record<(typeof STYLE_WHITELIST)[number], string>
-> = {
-  // 布局相关
-  position: "static",
-  top: "auto",
-  right: "auto",
-  bottom: "auto",
-  left: "auto",
-  float: "none",
-  "z-index": "auto",
-
-  // 盒模型
-  width: "auto",
-  height: "auto",
-  "max-width": "none",
-  "max-height": "none",
-  "min-width": "0px",
-  "min-height": "0px",
-  margin: "0px",
-  "margin-top": "0px",
-  "margin-right": "0px",
-  "margin-bottom": "0px",
-  "margin-left": "0px",
-  padding: "0px",
-  "padding-top": "0px",
-  "padding-right": "0px",
-  "padding-bottom": "0px",
-  "padding-left": "0px",
-
-  // 边框
-  border: "none",
-  "border-width": "0px",
-  "border-style": "none",
-  "border-color": "rgb(0, 0, 0)",
-  "border-radius": "0px",
-
-  // Flex布局
-  flex: "none",
-  "flex-direction": "row",
-  "flex-wrap": "nowrap",
-  "flex-flow": "row nowrap",
-  "justify-content": "normal",
-  "align-items": "normal",
-  "align-content": "normal",
-  gap: "normal",
-
-  // Grid布局
-  grid: "none",
-  "grid-template-columns": "none",
-  "grid-template-rows": "none",
-  "grid-gap": "normal",
-  "grid-column": "auto",
-  "grid-row": "auto",
-
-  // 文字样式
-  "font-family": "-apple-system",
-  "font-size": "16px",
-  "font-weight": "400",
-  "line-height": "normal",
-  color: "rgb(0, 0, 0)",
-  "text-align": "start",
-  "text-decoration": "none",
-  "text-transform": "none",
-  "letter-spacing": "normal",
-
-  // 背景
-  background: "none",
-  // "background-color": "transparent",
-  "background-image": "none",
-  "background-repeat": "repeat",
-  "background-position": "0% 0%",
-  "background-size": "auto",
-
-  // 其他视觉效果
-  opacity: "1",
-  "box-shadow": "none",
-  transform: "none",
-  visibility: "visible",
-  overflow: "visible",
-  cursor: "auto",
+  // 滚动条样式
+  "scrollbar-width": { default: "auto", inherited: false, filter: true },
+  "scrollbar-color": { default: "auto", inherited: false, filter: true },
+  "overflow-x": { default: "visible", inherited: false, filter: true },
+  "overflow-y": { default: "visible", inherited: false, filter: true },
+  "scroll-behavior": { default: "auto", inherited: false, filter: true },
+  "scroll-snap-type": { default: "none", inherited: false, filter: true },
+  "scroll-snap-align": { default: "none", inherited: false, filter: true },
+  "overscroll-behavior": { default: "auto", inherited: false, filter: true },
 } as const;
 
-// 从白名单中提取复合属性映射
-const COMPOUND_PROPERTIES = {
-  // 边距复合属性
-  margin: STYLE_WHITELIST.filter((prop) =>
-    [
-      "margin",
-      "margin-top",
-      "margin-right",
-      "margin-bottom",
-      "margin-left",
-    ].includes(prop)
-  ),
+/** 从配置中派生其他常量  */
+// 从配置中提取白名单
+const STYLE_WHITELIST = Object.keys(STYLE_CONFIG) as string[];
 
-  // 内边距复合属性
-  padding: STYLE_WHITELIST.filter((prop) =>
-    [
-      "padding",
-      "padding-top",
-      "padding-right",
-      "padding-bottom",
-      "padding-left",
-    ].includes(prop)
-  ),
+// 从配置中提取需要过滤的默认样式
+const DEFAULT_STYLES = Object.entries(STYLE_CONFIG)
+  .filter(([_, value]) => !!value.filter)
+  .reduce(
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: value.default,
+    }),
+    {} as Record<string, string>
+  );
 
-  // 边框复合属性
-  border: STYLE_WHITELIST.filter((prop) =>
-    ["border", "border-width", "border-style", "border-color"].includes(prop)
-  ),
+// 从配置中提取需要继承的默认样式属性
+const INHERITED_PROPERTIES = Object.entries(STYLE_CONFIG)
+  .filter(([_, value]) => value.inherited)
+  .map(([key]) => key) as (keyof typeof STYLE_CONFIG)[];
+
+// 定义属性依赖规则
+const PROPERTY_DEPENDENCIES = {
+  border: {
+    condition: (rules: StyleNode["styles"]["rules"]) =>
+      !rules.some(
+        (rule) => rule.property === "border-width" && rule.value === "0px"
+      ),
+    properties: (prop: string) => prop.startsWith("border"),
+  },
+  "text-decoration": {
+    condition: (rules: StyleNode["styles"]["rules"]) =>
+      !rules.some(
+        (rule) => rule.property === "text-decoration-line" && rule.value === "none"
+      ),
+    properties: (prop: string) => prop.startsWith("text-decoration"),
+  },
+  flex: {
+    condition: (rules: StyleNode["styles"]["rules"]) =>
+      rules.some(
+        (rule) => rule.property === "display" && rule.value === "flex"
+      ),
+    properties: (prop: string) =>
+      ["justify-content", "align-items"].includes(prop),
+  },
+  grid: {
+    condition: (rules: StyleNode["styles"]["rules"]) =>
+      rules.some(
+        (rule) => rule.property === "display" && rule.value === "grid"
+      ),
+    properties: (prop: string) => prop.startsWith("grid"),
+  },
 } as const;
 
 // 唯一属性值的key
 const DATA_CLASS_ID = "JY-SITE-unique-ident-data" as const;
-//
-const CONNECTION_POINT = "__suffix__";
 
 // 样式树类型定义
 interface StyleNode {
@@ -228,7 +175,6 @@ const generateDataClassId = (el: HTMLElement): string => {
   if (classId) return classId;
 
   index++;
-  const random = Math.random().toString(36).substring(2, 8);
   const classNames = el.className
     ? el.className.split(" ").filter(Boolean)
     : [];
@@ -238,7 +184,7 @@ const generateDataClassId = (el: HTMLElement): string => {
   }
 
   const suffix = classNames.length > 0 ? "_" + classNames.join("_") : "";
-  const dataClassId = `${CLASS_PREFIX}${suffix}${CONNECTION_POINT}${random}_${el.tagName}_${index}`;
+  const dataClassId = `${CLASS_PREFIX}${suffix}_${el.tagName}${index}`;
 
   elementData.set(el, dataClassId);
 
@@ -282,7 +228,7 @@ const cloneElement = (el: HTMLElement): HTMLElement => {
         break;
       // 可以根据需要处理其他类型的节点
       default:
-        console.warn(`未处理的节点类型: ${child.nodeType}`);
+        utils.doLog(`未处理的节点类型: ${child.nodeType}`);
         break;
     }
   });
@@ -317,96 +263,64 @@ const collectStyleTree = (el: HTMLElement): StyleNode => {
   };
 };
 
-// 检查是否可以合并为简写形式
-const canMergeToShorthand = (
-  values: string[]
-): { value: string; canMerge: boolean } => {
-  if (values.length !== 4) return { value: "", canMerge: false };
-
-  // 所有值相同
-  if (values.every((v) => v === values[0])) {
-    return { value: values[0], canMerge: true };
-  }
-
-  // 上下相同且左右相同
-  if (values[0] === values[2] && values[1] === values[3]) {
-    return { value: `${values[0]} ${values[1]}`, canMerge: true };
-  }
-
-  // 四个值都需要指定
-  return {
-    value: `${values[0]} ${values[1]} ${values[2]} ${values[3]}`,
-    canMerge: true,
-  };
-};
-
 // 处理获得的构造函数
 const resolveStyleContent = (el: HTMLElement) => {
   const rules: StyleNode["styles"]["rules"] = [];
   const computedStyle = window.getComputedStyle(el);
 
-  // 临时存储复合属性的值
-  const compoundValues: Record<string, string[]> = {};
   for (const key of STYLE_WHITELIST) {
     const value = computedStyle.getPropertyValue(key).trim();
-
-    // 如果值等于默认值，则跳过
-    if (DEFAULT_STYLES[key] === value) {
-      continue;
-    }
-
-    // 检查是否是复合属性的子属性
-    let isSubProperty = false;
-    for (const [compound, subProps] of Object.entries(COMPOUND_PROPERTIES)) {
-      if (subProps.includes(key as any)) {
-        compoundValues[compound] = compoundValues[compound] || [];
-        const index = subProps.indexOf(key as any);
-        compoundValues[compound][index] = value;
-        isSubProperty = true;
-        break;
-      }
-    }
-    // 如果不是复合属性的子属性，直接添加
-    if (!isSubProperty) {
-      rules.push({
-        type: "Rule",
-        property: key,
-        value,
-        important: computedStyle.getPropertyPriority(key) === "important",
-      });
-    }
-  }
-  // 处理复合属性
-  for (const [compound, subProps] of Object.entries(COMPOUND_PROPERTIES)) {
-    const values = compoundValues[compound] || [];
-    if (values.length === subProps.length) {
-      const { value, canMerge } = canMergeToShorthand(values);
-      if (canMerge) {
-        rules.push({
-          type: "Rule",
-          property: compound,
-          value,
-          important: false,
-        });
-      } else {
-        // 如果不能合并，使用单独的属性
-        values.forEach((value, index) => {
-          if (value && value !== DEFAULT_STYLES[subProps[index]]) {
-            rules.push({
-              type: "Rule",
-              property: subProps[index],
-              value,
-              important:
-                computedStyle.getPropertyPriority(subProps[index]) ===
-                "important",
-            });
-          }
-        });
-      }
-    }
+    rules.push({
+      type: "Rule",
+      property: key,
+      value,
+      important: computedStyle.getPropertyPriority(key) === "important",
+    });
   }
 
-  return rules;
+  // 过滤掉属性依赖的属性
+  const filterDependentProperties = (
+    rules: StyleNode["styles"]["rules"]
+  ): StyleNode["styles"]["rules"] => {
+    let filteredRules = [...rules];
+
+    Object.entries(PROPERTY_DEPENDENCIES).forEach(([_, dependency]) => {
+      if (!dependency.condition(rules)) {
+        // 如果条件不满足，过滤掉相关属性
+        filteredRules = filteredRules.filter(
+          (rule) => !dependency.properties(rule.property)
+        );
+      }
+    });
+
+    return filteredRules;
+  };
+
+  // 过滤继承属性
+  const filterInheritedProperties = (
+    rules: StyleNode["styles"]["rules"]
+  ): StyleNode["styles"]["rules"] => {
+    return rules.filter((rule) => {
+      const inheritedValue =
+        INHERITED_PROPERTIES[
+          rule.property as keyof typeof INHERITED_PROPERTIES
+        ];
+      return !inheritedValue || rule.value !== inheritedValue;
+    });
+  };
+
+  // 前面进行合并时 可能也会产生默认值，所以最后再处理默认值
+  const realRules = filterDependentProperties(
+    filterInheritedProperties(
+      rules.filter(
+        (rule) =>
+          rule.value !==
+          DEFAULT_STYLES[rule.property as keyof typeof DEFAULT_STYLES]
+      )
+    )
+  );
+  return realRules;
+  // return rules;
 };
 
 // 将规则转换为CSS字符串
@@ -475,11 +389,116 @@ const generateComponentTree = ({ css, html }: ComponentTree): string => {
   <html>
   <head>
     <style>
-      *{
-      padding:0;
-      margin:0;
-      box-sizing: border-box;
-    }
+          a,
+      body,
+      center,
+      cite,
+      code,
+      dd,
+      del,
+      div,
+      dl,
+      dt,
+      em,
+      fieldset,
+      figcaption,
+      figure,
+      footer,
+      form,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      header,
+      hr,
+      html,
+      img,
+      input,
+      label,
+      legend,
+      li,
+      mark,
+      ol,
+      p,
+      section,
+      span,
+      textarea,
+      time,
+      td,
+      th,
+      ul {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-style: normal;
+
+        word-wrap: break-word;
+
+        word-break: break-all;
+        border: 0;
+      }
+
+      article,
+      aside,
+      details,
+      fieldset,
+      figcaption,
+      figure,
+      footer,
+      header,
+      main,
+      nav,
+      section {
+        display: block;
+      }
+
+      button,
+      input,
+      textarea {
+        margin: 0;
+        padding: 0;
+        font-size: 1em;
+        font-family: "Microsoft YaHei", sans-serif, "Helvetica Neue", Helvetica, Arial, "黑体", "宋体", Arial;
+        line-height: 1em;
+        background-color: transparent;
+        border: 0;
+        outline: none;
+        appearance: none;
+      }
+
+      textarea {
+        appearance: none;
+        resize: none;
+      }
+
+      input,
+      textarea,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+          a,
+          a:visited {
+              text-decoration: none !important;
+          }
+      a:focus,
+      a:active,
+      a:hover {
+        outline: none;
+      }
+
+      ol,
+      li,
+      ul {
+        list-style: none;
+      }
+
+      img {
+        font-size: 0;
+        border-style: none;
+      }
       ${css}
     </style>
   </head>
@@ -502,9 +521,7 @@ const openFullHtmlNewTab = (fullHtml: string) => {
 
 // 优化主方法
 const getStyle = (el: HTMLElement) => {
-  console.log("正在生成组件....");
-
-  console.log("COMPOUND_PROPERTIES", COMPOUND_PROPERTIES);
+  utils.doLog("正在生成组件....");
 
   index = -1;
   elementData = new WeakMap<HTMLElement, string>();
@@ -522,11 +539,10 @@ const getStyle = (el: HTMLElement) => {
   // 在新的页面打开完整的html文件
   openFullHtmlNewTab(fullHtml);
 
-  // console.log("clonedEl", clonedEl);
-  // console.log("cssString", cssTree);
-  // console.log("fullHtml", fullHtml);
+  // console.log("cssTree:", cssTree);
+  // console.log("cssString:", cssString);
 
-  console.log("组件生成完毕！！");
+  utils.doLog("组件生成完毕！！");
 
   return {
     elements,
