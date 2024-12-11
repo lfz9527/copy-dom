@@ -440,49 +440,165 @@ const useCreateComponent = () => {
     };`;
   };
 
-  // 修改CSS生成逻辑
+  // 辅助函数 比较两个规则数组是否相同
+  const areRulesEqual = (
+    rules1: StyleNode["styles"]["rules"],
+    rules2: StyleNode["styles"]["rules"]
+  ): boolean => {
+    if (rules1.length !== rules2.length) return false;
+
+    return rules1.every((rule1) => {
+      return rules2.some(
+        (rule2) =>
+          rule1.property === rule2.property &&
+          rule1.value === rule2.value &&
+          rule1.important === rule2.important &&
+          rule1.pseudo === rule2.pseudo
+      );
+    });
+  };
+
+  // CSS生成逻辑
   const generateCSS = (node: StyleNode): string => {
     let css = "";
 
-    // 按伪类/伪元素分组规则
-    const normalRules: StyleNode["styles"]["rules"] = [];
-    const pseudoRules: Record<string, StyleNode["styles"]["rules"]> = {};
+    // // 按伪类/伪元素分组规则
+    // const normalRules: StyleNode["styles"]["rules"] = [];
+    // const pseudoRules: Record<string, StyleNode["styles"]["rules"]> = {};
 
-    node.styles.rules.forEach((rule) => {
-      if (rule.pseudo) {
-        pseudoRules[rule.pseudo] = pseudoRules[rule.pseudo] || [];
-        pseudoRules[rule.pseudo].push(rule);
-      } else {
-        normalRules.push(rule);
-      }
+    // 按照层级分组节点
+    const groupNodesByLevel = (node: StyleNode): Map<number, StyleNode[]> => {
+      const levelMap = new Map<number, StyleNode[]>();
+
+      const traverse = (node: StyleNode, level: number) => {
+        if (!levelMap.has(level)) {
+          levelMap.set(level, []);
+        }
+        levelMap.get(level)!.push(node);
+        node.children.forEach((child) => traverse(child, level + 1));
+      };
+
+      traverse(node, 0);
+
+      return levelMap;
+    };
+    const levelMap = groupNodesByLevel(node);
+
+    // 处理每一层级的节点
+    levelMap.forEach((nodes, level) => {
+      // 按普通样式规则分组
+      const normalStyleGroups = new Map<string, string[]>();
+      // 按伪类/伪元素样式规则分组
+      const pseudoStyleGroups = new Map<string, Map<string, string[]>>();
+
+      nodes.forEach((node) => {
+        const normalRules: StyleNode["styles"]["rules"] = [];
+        const pseudoRules: Record<string, StyleNode["styles"]["rules"]> = {};
+
+        // 分离普通规则和伪类规则
+        node.styles.rules.forEach((rule) => {
+          if (rule.pseudo) {
+            pseudoRules[rule.pseudo] = pseudoRules[rule.pseudo] || [];
+            pseudoRules[rule.pseudo].push(rule);
+          } else {
+            normalRules.push(rule);
+          }
+        });
+
+        // 处理普通样式
+        const normalStyleKey = JSON.stringify(normalRules);
+        if (!normalStyleGroups.has(normalStyleKey)) {
+          normalStyleGroups.set(normalStyleKey, []);
+        }
+        normalStyleGroups.get(normalStyleKey)!.push(node[DATA_CLASS_ID]);
+
+        // 处理伪类样式
+        Object.entries(pseudoRules).forEach(([pseudo, rules]) => {
+          if (!pseudoStyleGroups.has(pseudo)) {
+            pseudoStyleGroups.set(pseudo, new Map());
+          }
+          const pseudoGroupMap = pseudoStyleGroups.get(pseudo)!;
+          const pseudoStyleKey = JSON.stringify(rules);
+
+          if (!pseudoGroupMap.has(pseudoStyleKey)) {
+            pseudoGroupMap.set(pseudoStyleKey, []);
+          }
+          pseudoGroupMap.get(pseudoStyleKey)!.push(node[DATA_CLASS_ID]);
+        });
+      });
+
+      // 生成普通样式
+      normalStyleGroups.forEach((classIds, rulesKey) => {
+        const rules = JSON.parse(rulesKey);
+        if (rules.length > 0) {
+          const selectors = classIds.map((id) => `.${id}`).join(", ");
+          const styles = rules
+            .filter((rule: any) => rule.value !== "")
+            .map((rule: any) => ruleToString(rule))
+            .join("\n  ");
+
+          if (styles) {
+            css += `${selectors} {\n  ${styles}\n}\n\n`;
+          }
+        }
+      });
+
+      // 生成伪类样式
+      pseudoStyleGroups.forEach((pseudoGroupMap, pseudo) => {
+        pseudoGroupMap.forEach((classIds, rulesKey) => {
+          const rules = JSON.parse(rulesKey);
+          if (rules.length > 0) {
+            const selectors = classIds
+              .map((id) => `.${id}${pseudo}`)
+              .join(", ");
+            const styles = rules
+              .filter((rule: any) => rule.value !== "")
+              .map((rule: any) => ruleToString(rule))
+              .join("\n  ");
+
+            if (styles) {
+              css += `${selectors} {\n  ${styles}\n}\n\n`;
+            }
+          }
+        });
+      });
     });
 
-    // 生成普通样式
-    const normalStyles = normalRules
-      .filter((rule) => rule.value !== "")
-      .map(ruleToString)
-      .join("\n  ");
+    // node.styles.rules.forEach((rule) => {
+    //   if (rule.pseudo) {
+    //     pseudoRules[rule.pseudo] = pseudoRules[rule.pseudo] || [];
+    //     pseudoRules[rule.pseudo].push(rule);
+    //   } else {
+    //     normalRules.push(rule);
+    //   }
+    // });
 
-    if (normalStyles) {
-      css += `.${node[DATA_CLASS_ID]} {\n  ${normalStyles}\n}\n\n`;
-    }
+    // // 生成普通样式
+    // const normalStyles = normalRules
+    //   .filter((rule) => rule.value !== "")
+    //   .map(ruleToString)
+    //   .join("\n  ");
 
-    // 生成伪类/伪元素样式
-    Object.entries(pseudoRules).forEach(([pseudo, rules]) => {
-      const pseudoStyles = rules
-        .filter((rule) => rule.value !== "")
-        .map(ruleToString)
-        .join("\n  ");
+    // if (normalStyles) {
+    //   css += `.${node[DATA_CLASS_ID]} {\n  ${normalStyles}\n}\n\n`;
+    // }
 
-      if (pseudoStyles) {
-        css += `.${node[DATA_CLASS_ID]}${pseudo} {\n  ${pseudoStyles}\n}\n\n`;
-      }
-    });
+    // // 生成伪类/伪元素样式
+    // Object.entries(pseudoRules).forEach(([pseudo, rules]) => {
+    //   const pseudoStyles = rules
+    //     .filter((rule) => rule.value !== "")
+    //     .map(ruleToString)
+    //     .join("\n  ");
+
+    //   if (pseudoStyles) {
+    //     css += `.${node[DATA_CLASS_ID]}${pseudo} {\n  ${pseudoStyles}\n}\n\n`;
+    //   }
+    // });
 
     // 递归处理子节点
-    node.children.forEach((child) => {
-      css += generateCSS(child);
-    });
+    // node.children.forEach((child) => {
+    //   css += generateCSS(child);
+    // });
 
     return css;
   };
@@ -547,17 +663,21 @@ const useCreateComponent = () => {
     // 生成预览代码
     return `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Generated Document</title>
         <style>
         ${RESET_CSS}
           ${css}
         </style>
       </head>
       <body>
-        ${html.outerHTML}
+      ${html.outerHTML}
       </body>
-      </html>`;
+      </html>
+      `;
   };
 
   // 清理其他资源
@@ -587,6 +707,9 @@ const useCreateComponent = () => {
     const fullHtml = generateComponentTree({ css: cssString, html: elements });
 
     setFullHtml(fullHtml);
+
+    console.log('cssString',cssString);
+    
 
     doLog("组件生成完毕！！");
   };

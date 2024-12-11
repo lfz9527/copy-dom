@@ -22,33 +22,35 @@ export default defineContentScript({
     };
 
     const comHover = await createShadowUi(ctx);
-    browser.runtime.onMessage.addListener((message) => {
-      const { data } = message;
-      const { id } = data;
+    // browser.runtime.onMessage.addListener((message) => {
+    //   const { data } = message;
+    //   const { id } = data;
 
-      if (message.type === "BROWSER_LOAD_COMPLETE") {
-        utils.doLog("页面加载完成");
-        state.inject[id] = false;
-        state.load[id] = false;
-      }
+    //   if (message.type === "BROWSER_LOAD_COMPLETE") {
+    //     utils.doLog("页面加载完成");
+    //     state.inject[id] = false;
+    //     state.load[id] = false;
+    //   }
 
-      if (message.type === "JY_COPY_DOM_CHANGE") {
-        utils.doLog("监听到点击事件");
-        const load = state.load[id];
+    //   if (message.type === "JY_COPY_DOM_CHANGE") {
+    //     utils.doLog("监听到点击事件");
+    //     const load = state.load[id];
 
-        state.inject[id] = !load
-        state.load[id] = !load
+    //     state.inject[id] = !load
+    //     state.load[id] = !load
 
-        if(load) {
-          comHover.remove();
-          utils.doLog("插件关闭");
-        } else {
-          utils.doLog("插件开启");
-          comHover.mount();
-        }
+    //     if(load) {
+    //       comHover.remove();
+    //       utils.doLog("插件关闭");
+    //     } else {
+    //       utils.doLog("插件开启");
+    //       comHover.mount();
+    //     }
 
-      }
-    });
+    //   }
+    // });
+
+    comHover.mount();
   },
 });
 

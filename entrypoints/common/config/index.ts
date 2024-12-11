@@ -98,13 +98,7 @@ export const STYLE_CONFIG: StyleConfig = {
   "scroll-snap-align": { default: "none", inherited: false, filter: true },
   "overscroll-behavior": { default: "auto", inherited: false, filter: true },
 
-  // placeholder 特有属性
-  "::placeholder-shown": { default: "false", inherited: false },
   "placeholder-color": { default: "", inherited: false },
-
-  // selection 特有属性
-  "::selection-color": { default: "", inherited: false },
-  "::selection-background": { default: "transparent", inherited: false },
 
   // before/after 特有属性
   content: { default: ["none", "normal"], inherited: false, filter: true },
