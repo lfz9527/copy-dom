@@ -4,7 +4,6 @@ export interface pseudoConfig {
   [key: string]: boolean;
 }
 
-
 export interface StyleConfig {
   [key: string]: {
     default: string | string[]; // 默认值
@@ -13,9 +12,8 @@ export interface StyleConfig {
   };
 }
 
-
 // 样式树类型定义
-export  interface StyleNode {
+export interface StyleNode {
   type: "Element";
   tagName: string;
   [DATA_CLASS_ID]: string;
@@ -31,3 +29,18 @@ export  interface StyleNode {
   };
   children: StyleNode[];
 }
+
+// 定义每种元素的属性类型
+export interface ElAttrCategory {
+  common: string[];
+  input: string[];
+  img: string[];
+  a: string[];
+  button: string[];
+  video: string[];
+  audio: string[];
+}
+
+export type ElAttrCategoryKeys = Array<keyof ElAttrCategory>;
+
+export type ElTagKeys = Omit<ElAttrCategoryKeys, "common">;

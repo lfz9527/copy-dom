@@ -1,14 +1,20 @@
 import { useState } from "react";
-import {doLog} from "../utils";
+import { doLog } from "../utils";
 import {
   PSEUDO_CONFIG,
   STYLE_WHITELIST,
   DEFAULT_STYLES,
   INHERITED_PROPERTIES,
   PROPERTY_DEPENDENCIES,
+  ELEMENT_ATTRIBUTES,
 } from "../config";
-import type { StyleNode } from "../config/type";
-import { CLASS_PREFIX, DATA_CLASS_ID, RESET_CSS } from "../constant";
+import type {
+  StyleNode,
+  ElAttrCategoryKeys,
+  ElAttrCategory,
+  ElTagKeys,
+} from "../config/type";
+import { CLASS_PREFIX, DATA_CLASS_ID, RESET_CSS, NodeTypes } from "../constant";
 
 let elementData = new WeakMap<HTMLElement, string>();
 let index = -1;
@@ -22,20 +28,28 @@ const useCreateComponent = () => {
     if (classId) return classId;
 
     index++;
-    const classNames = el.className
-      ? el.className.split(" ").filter(Boolean)
-      : [];
 
-    if (el.id) {
-      classNames.push(`${el.id}`);
-    }
-
-    const suffix = classNames.length > 0 ? "_" + classNames.join("_") : "";
-    const dataClassId = `${CLASS_PREFIX}${suffix}_${el.tagName}${index}`;
+    const dataClassId = `${CLASS_PREFIX}_${el.tagName}${index}`;
 
     elementData.set(el, dataClassId);
 
     return dataClassId;
+  };
+
+  // 检查是否是 style 元素
+  const isStyleElement = (node: Node): node is HTMLStyleElement => {
+    return (
+      node.nodeType === NodeTypes.ELEMENT_NODE &&
+      node instanceof HTMLStyleElement
+    );
+  };
+
+  // 检查是否是 script 元素
+  const isScriptElement = (node: Node): node is HTMLScriptElement => {
+    return (
+      node.nodeType === NodeTypes.ELEMENT_NODE &&
+      node instanceof HTMLScriptElement
+    );
   };
 
   // 克隆元素，包括伪类/伪元素样式
@@ -65,11 +79,17 @@ const useCreateComponent = () => {
     // 处理子节点
     Array.from(el.childNodes).forEach((child) => {
       switch (child.nodeType) {
-        case Node.ELEMENT_NODE:
+        case NodeTypes.ELEMENT_NODE:
           // 元素点需要递归处理
-          clonedEl.appendChild(cloneElement(child as HTMLElement));
+          // 跳过 style 和 script 标签
+          if (
+            !(child instanceof HTMLStyleElement) &&
+            !(child instanceof HTMLScriptElement)
+          ) {
+            clonedEl.appendChild(cloneElement(child as HTMLElement));
+          }
           break;
-        case Node.TEXT_NODE:
+        case NodeTypes.TEXT_NODE:
           // 这些节点可以直接克隆
           clonedEl.appendChild(child.cloneNode(true));
           break;
@@ -113,7 +133,8 @@ const useCreateComponent = () => {
   // 添加继承样式处理工具
   const getInheritedStyles = (el: HTMLElement): Record<string, string> => {
     const inheritedStyles: Record<string, string> = {};
-    const currentEl = el.parentElement;
+    const isRootDom = el.getAttribute("is_root_dom") === "true";
+    const currentEl = isRootDom ? null : el.parentElement;
 
     // 果没有父元素，返回空对象
     if (!currentEl) return inheritedStyles;
@@ -196,7 +217,6 @@ const useCreateComponent = () => {
   // 检查伪类/伪元素是否真正被应用
   const hasPseudoStyles = (el: HTMLElement, pseudo: string): boolean => {
     const style = window.getComputedStyle(el, pseudo);
-    const normalStyle = window.getComputedStyle(el);
 
     // 检查元素是否有相关的样式规则
     const hasStyleRule = Array.from(document.styleSheets).some((sheet) => {
@@ -402,7 +422,7 @@ const useCreateComponent = () => {
     };
 
     // 收集伪类和伪元素样式
-    const pseudoRules = resolvePseudoStyle(el);;
+    const pseudoRules = resolvePseudoStyle(el);
 
     rules = [...rules, ...pseudoRules];
 
@@ -469,12 +489,36 @@ const useCreateComponent = () => {
 
   // 清理并转换HTML元素
   const formatElement = (el: HTMLElement): HTMLElement => {
+    const tagName = el.tagName.toLowerCase();
     // 获取DATA_CLASS_ID并设置为class
     const dataClassId = el.getAttribute(DATA_CLASS_ID);
+    // 获取元素的所有属性
+    const attributes = el.attributes;
+    // 属性分类的key
+    const attrCateKeys: ElAttrCategoryKeys = Object.keys(
+      ELEMENT_ATTRIBUTES
+    ) as Array<keyof ElAttrCategory>;
 
-    // 删除属性
-    ["class", "id", "style", DATA_CLASS_ID].forEach((attr) => {
-      el.removeAttribute(attr);
+    // 预设的标签名
+    const ElTagNames: ElTagKeys | string[] = attrCateKeys.filter(
+      (v) => v !== "common"
+    );
+
+    // 通用属性
+    const commonAttributes = ELEMENT_ATTRIBUTES["common"];
+
+    const currentAttributes = [
+      ...commonAttributes,
+      ...(ElTagNames.includes(tagName as keyof ElAttrCategory)
+        ? ELEMENT_ATTRIBUTES[tagName as keyof ElAttrCategory]
+        : []),
+    ];
+
+    Array.from(attributes).forEach((v) => {
+      // 检查属性是否在当前标签的属性列表中,在的话就保留，不在的话就删除
+      if (!currentAttributes.includes(v.name)) {
+        el.removeAttribute(v.name);
+      }
     });
 
     // 重新设置类名
@@ -516,8 +560,6 @@ const useCreateComponent = () => {
       </html>`;
   };
 
-
-
   // 清理其他资源
   const cleanup = () => {
     index = -1;
@@ -529,10 +571,14 @@ const useCreateComponent = () => {
 
     cleanup();
 
+    // 设置根节点属性
+    el.setAttribute("is_root_dom", "true");
+
     // 克隆 dom
     const clonedEl = cloneElement(el);
     // 生成css 树
     const cssTree = collectStyleTree(el);
+
     // 处理dome 结构
     const elements = formatElement(clonedEl);
     // css 树生成 css 样式表

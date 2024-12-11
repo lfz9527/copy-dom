@@ -1,29 +1,9 @@
-import type { pseudoConfig, StyleConfig, StyleNode } from "./type";
-
-// 定义伪类和伪元素配置
-export const PSEUDO_CONFIG: pseudoConfig = {
-  // 伪类
-  ":hover": true,
-  ":active": true,
-  ":focus": true,
-  ":visited": true,
-  ":disabled": true,
-  ":checked": true,
-  ":first-child": true,
-  ":last-child": true,
-  ":nth-child": true,
-
-  // 伪元素
-  "::before": true,
-  "::after": true,
-  "::placeholder": true,
-  "::selection": true,
-  "::first-line": true,
-  "::first-letter": true,
-  "::backdrop": true,
-  "::marker": true,
-  "::file-selector-button": true,
-} as const;
+import type {
+  pseudoConfig,
+  StyleConfig,
+  StyleNode,
+  ElAttrCategory,
+} from "./type";
 
 export const STYLE_CONFIG: StyleConfig = {
   // 布局相关
@@ -76,7 +56,7 @@ export const STYLE_CONFIG: StyleConfig = {
   // background: { default: "none", inherited: false, filter: true },
   "background-clip": { default: "border-box", inherited: false, filter: true },
   "background-color": {
-    default: ["transparent"],
+    default: ["transparent", "rgba(0, 0, 0, 0)"],
     inherited: false,
     filter: true,
   },
@@ -127,7 +107,7 @@ export const STYLE_CONFIG: StyleConfig = {
   "::selection-background": { default: "transparent", inherited: false },
 
   // before/after 特有属性
-  content: { default: "none", inherited: false },
+  content: { default: ["none", "normal"], inherited: false, filter: true },
 } as const;
 
 /** 从配置中派生其他常量  */
@@ -184,3 +164,72 @@ export const PROPERTY_DEPENDENCIES = {
     properties: (prop: string) => prop.startsWith("grid"),
   },
 } as const;
+
+// 定义伪类和伪元素配置
+export const PSEUDO_CONFIG: pseudoConfig = {
+  // 伪类
+  ":hover": true,
+  ":active": true,
+  ":focus": true,
+  ":visited": true,
+  ":disabled": true,
+  ":checked": true,
+  ":first-child": true,
+  ":last-child": true,
+  ":nth-child": true,
+
+  // 伪元素
+  "::before": true,
+  "::after": true,
+  "::placeholder": true,
+  "::selection": true,
+  "::first-line": true,
+  "::first-letter": true,
+  "::backdrop": true,
+  "::marker": true,
+  "::file-selector-button": true,
+} as const;
+
+// 需要保留的属性
+export const ELEMENT_ATTRIBUTES: ElAttrCategory = {
+  // 通用属性
+  common: [
+    "title", // 鼠标悬停时的提示文本
+    "hidden", // 是否隐藏元素
+  ],
+  // 输入类元素
+  input: [
+    "value", // '输入框的值',
+    "type", // '输入类型（text/password/checkbox等）',
+    "placeholder", //  '输入提示文本',
+    "disabled", // '是否禁用',
+    "required", //'是否必填',
+    "readOnly",
+    "checked",
+    "name",
+    "min",
+    "max",
+    "step",
+  ],
+  // 图片
+  img: ["src", "alt", "width", "height", "loading", "crossOrigin", "decoding"],
+  // 链接
+  a: ["href", "target", "rel", "download"],
+
+  // 按钮
+  button: ["type", "disabled"],
+  // 视频
+  video: [
+    "src",
+    "poster",
+    "width",
+    "height",
+    "controls",
+    "autoplay",
+    "loop",
+    "muted",
+    "preload",
+  ],
+  // 音频
+  audio: ["src", "controls", "autoplay", "loop", "muted", "preload"],
+};

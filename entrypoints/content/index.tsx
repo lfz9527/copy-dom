@@ -5,17 +5,55 @@ import App from "../common/App";
 import utils from "@/entrypoints/utils/index";
 import "./styles.css";
 
+interface State {
+  load: Record<string, boolean>;
+  inject: Record<string, boolean>;
+}
+
 export default defineContentScript({
-  matches: ["*://*/*"],
+  matches: ["<all_urls>"],
   cssInjectionMode: "ui",
   async main(ctx) {
     utils.doLog("脚本加载成功");
+
+    const state: State = {
+      load: {},
+      inject: {},
+    };
+
     const comHover = await createShadowUi(ctx);
+    browser.runtime.onMessage.addListener((message) => {
+      const { data } = message;
+      const { id } = data;
+
+      if (message.type === "BROWSER_LOAD_COMPLETE") {
+        utils.doLog("页面加载完成");
+        state.inject[id] = false;
+        state.load[id] = false;
+      }
+
+      if (message.type === "JY_COPY_DOM_CHANGE") {
+        utils.doLog("监听到点击事件");
+        const load = state.load[id];
+
+        state.inject[id] = !load
+        state.load[id] = !load
+
+        if(load) {
+          comHover.remove();
+          utils.doLog("插件关闭");
+        } else {
+          utils.doLog("插件开启");
+          comHover.mount();
+        }
+
+      }
+    });
   },
 });
 
 async function createShadowUi(ctx: ContentScriptContext) {
-  const hoverMask =  await createShadowRootUi(ctx, {
+  const hoverMask = await createShadowRootUi(ctx, {
     name: "jy-copy-dom",
     position: "inline",
     anchor: "body",
@@ -34,7 +72,5 @@ async function createShadowUi(ctx: ContentScriptContext) {
       elements?.wrapper.remove();
     },
   });
-  hoverMask.mount();
-  return hoverMask
+  return hoverMask;
 }
- 

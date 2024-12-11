@@ -4,7 +4,7 @@ export const DATA_CLASS_ID = "JY-SITE-unique-ident-data" as const;
 export const CLASS_PREFIX = "JY-SITE-COM";
 
 export const RESET_CSS = `
-            a,
+      a,
       body,
       center,
       cite,
@@ -92,6 +92,7 @@ export const RESET_CSS = `
       textarea,
       a {
         -webkit-tap-highlight-color: transparent;
+         color: inherit; /* 移除已访问链接的颜色 */
       }
 
           a,
@@ -115,3 +116,15 @@ export const RESET_CSS = `
         border-style: none;
       }
     `;
+
+export const NodeTypes = {
+  ELEMENT_NODE: 1, // 元素节点
+  ATTRIBUTE_NODE: 2, // 属性节点
+  TEXT_NODE: 3, // 文本节点
+  CDATA_SECTION_NODE: 4, // CDATA 节点
+  PROCESSING_INSTRUCTION_NODE: 7, // 处理指令节点
+  COMMENT_NODE: 8, // 注释节点
+  DOCUMENT_NODE: 9, // document 节点
+  DOCUMENT_TYPE_NODE: 10, // documentType 节点
+  DOCUMENT_FRAGMENT_NODE: 11, // documentFragment 节点
+} as const;

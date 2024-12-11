@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { browser } from "wxt/browser";
+import { useState,useEffect } from "react";
 import HoverElement from "./components/hover-element";
 import SelectElement from "./components/select-element";
 import { useCreateComponent } from "./hooks";
-import { openFullHtmlNewTab } from "./utils";
+import { openFullHtmlNewTab,downloadBlob } from "./utils";
 import "./app.css";
 
 const App = () => {
@@ -18,9 +19,9 @@ const App = () => {
     openFullHtmlNewTab(fullHtml);
   };
 
-  const downloadCom = () => {};
-
-  const closeApp = () => {};
+  const downloadCom = () => {
+    downloadBlob(fullHtml)
+  };
 
   const selectChange = (el: HTMLElement) => {
     setElement(el);
@@ -34,7 +35,7 @@ const App = () => {
       <div
         className="app-wrap-select"
         style={{
-          display: !start || element ? "flex" : "none",
+          display: !start ? "flex" : "none",
         }}
       >
         <button className="primary" onClick={startSelectCom}>
@@ -45,9 +46,6 @@ const App = () => {
         </button>
         <button className="primary" onClick={downloadCom}>
           下载
-        </button>
-        <button className="second" onClick={closeApp}>
-          关闭
         </button>
       </div>
 
