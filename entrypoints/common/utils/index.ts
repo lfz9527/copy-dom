@@ -29,11 +29,11 @@ const openFullHtmlNewTab = (fullHtml: string, isReturn = false) => {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 };
 
-function downloadBlob(fullHtml:string) {
+function downloadBlob(fullHtml: string) {
   const url = openFullHtmlNewTab(fullHtml, true);
   const link = document.createElement("a");
   link.href = url!;
-  link.download = 'index.html';
+  link.download = "index.html";
 
   // 触发点击
   link.click();
@@ -42,11 +42,10 @@ function downloadBlob(fullHtml:string) {
   url && URL.revokeObjectURL(url);
 }
 
-
 // 定义分类结果的类型
 interface ClassifiedProps {
-  common: string[];  // 共同属性
-  different: string[];  // 不同属性
+  common: string[]; // 共同属性
+  different: string[]; // 不同属性
   unique: {
     obj1: string[]; // obj1 独有的属性
     obj2: string[]; // obj2 独有的属性
@@ -54,7 +53,10 @@ interface ClassifiedProps {
 }
 
 // 分类方法：比较两个对象的属性
-const classifyProps = (obj1: Record<string,string>, obj2:  Record<string,string>): ClassifiedProps => {
+const classifyProps = (
+  obj1: Record<string, string>,
+  obj2: Record<string, string>
+): ClassifiedProps => {
   const common: string[] = []; // 存放共同属性
   const different: string[] = []; // 存放不同属性
   const unique: { obj1: string[]; obj2: string[] } = { obj1: [], obj2: [] }; // 存放独有属性
@@ -91,4 +93,39 @@ const classifyProps = (obj1: Record<string,string>, obj2:  Record<string,string>
   };
 };
 
-export { doLog, getElPosition, openFullHtmlNewTab,downloadBlob,classifyProps };
+// 对象转化为url参数
+const objectToUrlParams = (params: Record<string, any>): string => {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value && value !== "") {
+      searchParams.append(key, value);
+    }
+  }
+  return searchParams.toString();
+};
+
+
+/**
+ * @description: 生成随机字符串
+ * @param digit 想要生成的随机字符串长度
+ * @param isPlainNumber 随机字符串是否纯数字
+ * @return 要输出的字符串
+ */
+const getRandomId = (digit: number = 8, isPlainNumber: boolean = false) => {
+  return 'x'.repeat(digit).replace(/[x]/g, (c) => {
+    const radix = isPlainNumber ? 10 : 16;
+    return ((Math.random() * radix) | 0).toString(radix);
+  });
+}
+
+
+export {
+  doLog,
+  getElPosition,
+  openFullHtmlNewTab,
+  downloadBlob,
+  classifyProps,
+  objectToUrlParams,
+  getRandomId
+};

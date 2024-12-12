@@ -30,6 +30,10 @@ const App = () => {
     el && createFullHtml(el);
   };
 
+  const openEditCodePage = () =>{
+   
+  }
+
   return (
     <div className="app-wrap">
       <div
@@ -46,6 +50,9 @@ const App = () => {
         </button>
         <button className="primary" onClick={downloadCom}>
           下载
+        </button>
+        <button className="primary" onClick={openEditCodePage}>
+          打开代码编辑器
         </button>
       </div>
 
