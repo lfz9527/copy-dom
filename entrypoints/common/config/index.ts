@@ -17,7 +17,7 @@ export const STYLE_CONFIG: StyleConfig = {
   float: { default: "none", inherited: false, filter: true },
   clear: { default: "none", inherited: false, filter: true },
   "z-index": { default: "auto", inherited: false, filter: true },
-  "box-sizing": { default: "content-box", inherited: false, filter: true },
+  "box-sizing": { default: ["content-box","border-box"], inherited: false, filter: true },
 
   // 盒模型
   width: { default: "auto", inherited: false, filter: true },
@@ -42,7 +42,7 @@ export const STYLE_CONFIG: StyleConfig = {
   gap: { default: "normal", inherited: false, filter: true },
 
   // 文字样式
-  "font-size": { default: "16px", inherited: true },
+  "font-size": { default: ["16px", "0px",'0'], inherited: true, filter: true },
   "font-weight": { default: "normal", inherited: true, filter: true },
   "line-height": { default: "normal", inherited: true, filter: true },
   color: { default: "rgb(0, 0, 0)", inherited: true, filter: true },
@@ -310,6 +310,7 @@ export const TAG_DEFAULT_STYLES: TagDefaultStyles = {
     display: "table-cell",
   },
   img: {
-    display: 'inline',
+    display: "inline",
+    'line-height': '0px'
   },
 } as const;

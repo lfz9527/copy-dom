@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { doLog } from "../utils";
+import { doLog, classifyProps } from "../utils";
 import {
   PSEUDO_CONFIG,
   STYLE_WHITELIST,
@@ -38,21 +38,6 @@ const useCreateComponent = () => {
     return dataClassId;
   };
 
-  // 检查是否是 style 元素
-  const isStyleElement = (node: Node): node is HTMLStyleElement => {
-    return (
-      node.nodeType === NodeTypes.ELEMENT_NODE &&
-      node instanceof HTMLStyleElement
-    );
-  };
-
-  // 检查是否是 script 元素
-  const isScriptElement = (node: Node): node is HTMLScriptElement => {
-    return (
-      node.nodeType === NodeTypes.ELEMENT_NODE &&
-      node instanceof HTMLScriptElement
-    );
-  };
 
   // 克隆元素，包括伪类/伪元素样式
   const cloneElement = (el: HTMLElement): HTMLElement => {
@@ -83,10 +68,11 @@ const useCreateComponent = () => {
       switch (child.nodeType) {
         case NodeTypes.ELEMENT_NODE:
           // 元素点需要递归处理
-          // 跳过 style 和 script 标签
+                         // 跳过 style、script 和 noscript 标签
           if (
             !(child instanceof HTMLStyleElement) &&
-            !(child instanceof HTMLScriptElement)
+            !(child instanceof HTMLScriptElement) && 
+            !((child as HTMLElement).tagName.toLowerCase() === 'noscript')
           ) {
             clonedEl.appendChild(cloneElement(child as HTMLElement));
           }
@@ -503,7 +489,201 @@ const useCreateComponent = () => {
   };
 
   // 升级CSS生成逻辑
-  const generateCssUpdate = () => {};
+  const generateCssUpdate = (node: StyleNode) => {
+    let css = "";
+
+    // 按层级分组节点
+    const groupNodesByLevel = (node: StyleNode): Map<number, StyleNode[]> => {
+      const levelMap = new Map<number, StyleNode[]>();
+
+      const traverse = (node: StyleNode, level: number) => {
+        if (!levelMap.has(level)) {
+          levelMap.set(level, []);
+        }
+        levelMap.get(level)!.push(node);
+        node.children.forEach((child) => traverse(child, level + 1));
+      };
+
+      traverse(node, 0);
+      return levelMap;
+    };
+
+    const levelMap = groupNodesByLevel(node);
+
+    // 用于最终合并的样式映射
+    interface MergedStyle {
+      selectors: string[];
+      rules: Map<string, StyleNode["styles"]["rules"][0]>;
+    }
+    const finalStyles = new Map<string, MergedStyle>();
+
+    //处理伪类/伪元素的样式映射
+    interface PseudoStyle {
+      pseudo: string;
+      rules: Map<string, StyleNode["styles"]["rules"][0]>;
+    }
+    const pseudoStyles = new Map<string, PseudoStyle[]>();
+
+    // 按层级处理
+    levelMap.forEach((nodes, level) => {
+      interface StyleInfo {
+        selector: string;
+        rules: Map<string, StyleNode["styles"]["rules"][0]>;
+      }
+      const levelStyles: StyleInfo[] = [];
+
+      // 收集当前层级所有节点的样式
+      nodes.forEach((node) => {
+        const styleInfo: StyleInfo = {
+          selector: `.${node[DATA_CLASS_ID]}`,
+          rules: new Map(),
+        };
+
+        node.styles.rules.forEach((rule) => {
+          const selector = `.${node[DATA_CLASS_ID]}`;
+
+          if (!rule.pseudo) {
+            styleInfo.rules.set(rule.property, rule);
+          } else {
+            const key = `${selector}${rule.pseudo}`;
+            if (!pseudoStyles.has(key)) {
+              pseudoStyles.set(key, [
+                {
+                  pseudo: rule.pseudo,
+                  rules: new Map(),
+                },
+              ]);
+            }
+            const pseudoGroup = pseudoStyles.get(key)![0];
+            pseudoGroup.rules.set(rule.property, rule);
+          }
+        });
+
+        levelStyles.push(styleInfo);
+      });
+
+      // 在当前层级内按属性值分组
+      interface PropertyGroup {
+        value: string;
+        important: boolean;
+        selectors: string[];
+      }
+      const propertyGroups = new Map<string, Map<string, PropertyGroup>>();
+
+      // 遍历当前层级所有节点的所有属性
+      levelStyles.forEach((nodeStyle) => {
+        nodeStyle.rules.forEach((rule) => {
+          const valueKey = `${rule.value}${rule.important ? "!important" : ""}`;
+
+          if (!propertyGroups.has(rule.property)) {
+            propertyGroups.set(rule.property, new Map());
+          }
+
+          const propGroup = propertyGroups.get(rule.property)!;
+          if (!propGroup.has(valueKey)) {
+            propGroup.set(valueKey, {
+              value: rule.value,
+              important: rule.important,
+              selectors: [],
+            });
+          }
+
+          propGroup.get(valueKey)!.selectors.push(nodeStyle.selector);
+        });
+      });
+
+      // 为当前层级生成CSS
+      css += `/* Level ${level} styles */\n`;
+
+      // 首先生成共同属性的CSS
+      propertyGroups.forEach((valueGroups, property) => {
+        valueGroups.forEach((group) => {
+          if (group.selectors.length > 1) {
+            const selectorsKey = group.selectors.sort().join(", ");
+
+            if (!finalStyles.has(selectorsKey)) {
+              finalStyles.set(selectorsKey, {
+                selectors: group.selectors,
+                rules: new Map(),
+              });
+            }
+
+            finalStyles.get(selectorsKey)!.rules.set(property, {
+              type: "Rule",
+              property,
+              value: group.value,
+              important: group.important,
+            });
+
+            // 从各个节点的规则中移除已处理的属性
+            group.selectors.forEach((selector) => {
+              const nodeStyle = levelStyles.find(
+                (ns) => ns.selector === selector
+              );
+              if (nodeStyle) {
+                nodeStyle.rules.delete(property);
+              }
+            });
+          }
+        });
+      });
+
+      // 处理剩余的独特属性
+      levelStyles.forEach((nodeStyle) => {
+        if (nodeStyle.rules.size > 0) {
+          const selectorKey = nodeStyle.selector;
+
+          if (!finalStyles.has(selectorKey)) {
+            finalStyles.set(selectorKey, {
+              selectors: [nodeStyle.selector],
+              rules: new Map(),
+            });
+          }
+
+          nodeStyle.rules.forEach((rule) => {
+            finalStyles.get(selectorKey)!.rules.set(rule.property, rule);
+          });
+        }
+      });
+    });
+
+    // 生成最终的CSS
+    finalStyles.forEach((style) => {
+      const selector = style.selectors.join(", ");
+      const rules = Array.from(style.rules.values())
+        .map(
+          (rule) =>
+            `  ${rule.property}: ${rule.value}${
+              rule.important ? " !important" : ""
+            };`
+        )
+        .join("\n");
+
+      if (rules) {
+        css += `${selector} {\n${rules}\n}\n\n`;
+      }
+    });
+
+    // 生成伪类/伪元素的CSS
+    pseudoStyles.forEach((pseudoGroup, selector) => {
+      pseudoGroup.forEach((group) => {
+        const rules = Array.from(group.rules.values())
+          .map(
+            (rule) =>
+              `  ${rule.property}: ${rule.value}${
+                rule.important ? " !important" : ""
+              };`
+          )
+          .join("\n");
+
+        if (rules) {
+          css += `${selector} {\n${rules}\n}\n\n`;
+        }
+      });
+    });
+
+    return css;
+  };
 
   // 清理并转换HTML元素
   const formatElement = (el: HTMLElement): HTMLElement => {
@@ -604,11 +784,14 @@ const useCreateComponent = () => {
     // 处理dome 结构
     const elements = formatElement(clonedEl);
     // css 树生成 css 样式表
-    const cssString = generateCSS(cssTree);
+    const cssString = generateCssUpdate(cssTree);
     // css + dom 结构 生成完整的html 文档
     const fullHtml = generateComponentTree({ css: cssString, html: elements });
 
+    // const newCssStr = generateCssUpdate(cssTree);
+
     setFullHtml(fullHtml);
+    console.log("cssTree", cssTree);
     console.log("cssString", cssString);
 
     doLog("组件生成完毕！！");

@@ -48,6 +48,7 @@ export const RESET_CSS = `
         margin: 0;
         padding: 0;
         font-style: normal;
+        font-size: 16px;
 
         word-wrap: break-word;
 
@@ -117,7 +118,8 @@ export const RESET_CSS = `
       }
     `;
 
-export const NodeTypes = {
+
+    export const NodeTypes = {
   ELEMENT_NODE: 1, // 元素节点
   ATTRIBUTE_NODE: 2, // 属性节点
   TEXT_NODE: 3, // 文本节点
