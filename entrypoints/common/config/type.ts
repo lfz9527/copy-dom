@@ -1,4 +1,5 @@
-import { DATA_CLASS_ID } from "../constant";
+import { DATA_CLASS_ID } from "../constant"
+import { STYLE_CONFIG } from "./index"
 
 export interface pseudoConfig {
   [key: string]: boolean;
@@ -44,3 +45,29 @@ export interface ElAttrCategory {
 export type ElAttrCategoryKeys = Array<keyof ElAttrCategory>;
 
 export type ElTagKeys = Omit<ElAttrCategoryKeys, "common">;
+
+
+// 定义可能的样式属性
+type StyleProperty = keyof typeof STYLE_CONFIG;
+
+// 定义标签默认样式的值类型
+type StyleValue = string;
+
+
+// 定义单个标签的样式类型
+type TagStyle = {
+  [K in StyleProperty]?: StyleValue;
+};
+// 定义所有HTML标签的联合类型
+export type HTMLTags = 
+  | 'div' | 'p' | 'h1' | 'h2' | 'h3' 
+  | 'span' | 'i' | 'b' 
+  | 'button' | 'input' | 'textarea' | 'select'
+  | 'a' | 'img'
+  | 'ul' | 'ol' | 'li'
+  | 'table' | 'tr' | 'td' | 'th';
+
+  // 定义TAG_DEFAULT_STYLES的完整类型
+export type TagDefaultStyles = {
+  readonly [Tag in HTMLTags]?: TagStyle;
+};

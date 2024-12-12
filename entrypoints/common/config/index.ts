@@ -3,6 +3,7 @@ import type {
   StyleConfig,
   StyleNode,
   ElAttrCategory,
+  TagDefaultStyles,
 } from "./type";
 
 export const STYLE_CONFIG: StyleConfig = {
@@ -227,3 +228,88 @@ export const ELEMENT_ATTRIBUTES: ElAttrCategory = {
   // 音频
   audio: ["src", "controls", "autoplay", "loop", "muted", "preload"],
 };
+
+// 定义标签默认样式
+export const TAG_DEFAULT_STYLES: TagDefaultStyles = {
+  // 块级元素
+  div: {
+    display: "block",
+  },
+  p: {
+    display: "block",
+  },
+  h1: {
+    display: "block",
+    "font-weight": "bold",
+  },
+  h2: {
+    display: "block",
+    "font-weight": "bold",
+  },
+  h3: {
+    display: "block",
+    "font-weight": "bold",
+  },
+
+  // 行内元素
+  span: {
+    display: "inline",
+  },
+  i: {
+    display: "inline",
+    "font-style": "italic",
+  },
+  b: {
+    display: "inline",
+    "font-weight": "bold",
+  },
+
+  // 表单元素
+  button: {
+    display: "inline-block",
+    "background-color": "buttonface",
+  },
+  input: {
+    display: "inline-block",
+  },
+  textarea: {
+    display: "inline-block",
+  },
+  select: {
+    display: "inline-block",
+  },
+
+  // 链接
+  a: {
+    display: "inline",
+    cursor: "pointer",
+  },
+
+  // 列表
+  ul: {
+    display: "block",
+  },
+  ol: {
+    display: "block",
+  },
+  li: {
+    display: "list-item",
+  },
+
+  // 表格
+  table: {
+    display: "table",
+  },
+  tr: {
+    display: "table-row",
+  },
+  td: {
+    display: "table-cell",
+  },
+  th: {
+    display: "table-cell",
+  },
+  img: {
+    display: 'inline',
+  },
+} as const;
