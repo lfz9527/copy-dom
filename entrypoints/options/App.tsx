@@ -4,18 +4,26 @@ import Header from "./component/header/index";
 import CodeEditor from "./component/codeEditor/index";
 import CodePreview from "./component/codePreview";
 import type { codeValueType } from "./type";
-import {globalState} from '~/entrypoints/common/storage'
+import { globalState, codeEditState } from "~/entrypoints/common/storage";
 import "./style.css";
 
-const {reset_css = ''} = globalState.getState()
+const { reset_css = "" } = globalState.getState();
 
 const App = () => {
   const [cssCode, setCssCode] = useState<codeValueType>("");
   const [jsCode, setJsCode] = useState<codeValueType>("");
   const [htmlCode, setHtmlCode] = useState<codeValueType>("");
-
-
   const [srcDoc, setSrcDoc] = useState("");
+
+  useEffect(() => {
+    getCacheCode();
+  }, []);
+
+  const getCacheCode = async () => {
+    const { css, html } = await codeEditState.getCodeState();
+    setCssCode(css);
+    setHtmlCode(html);
+  };
 
   // 代码复制
   const copyCode = () => {
@@ -70,13 +78,13 @@ const App = () => {
         >
           <Splitter layout="vertical">
             <Splitter.Panel>
-              <CodeEditor language="css" code="" onChange={cssChange} />
+              <CodeEditor language="css" code={cssCode} onChange={cssChange} />
             </Splitter.Panel>
             <Splitter.Panel>
-              <CodeEditor language="html" code="" onChange={htmlChange} />
+              <CodeEditor language="html" code={htmlCode} onChange={htmlChange} />
             </Splitter.Panel>
             <Splitter.Panel>
-              <CodeEditor language="javascript" code="" onChange={jsChange} />
+              <CodeEditor language="javascript" code={jsCode} onChange={jsChange} />
             </Splitter.Panel>
           </Splitter>
         </Splitter.Panel>

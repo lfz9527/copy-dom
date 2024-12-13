@@ -21,7 +21,7 @@ import "./style.css";
 
 interface Props {
   language: "css" | "html" | "javascript";
-  code: string;
+  code: codeValueType;
   onChange: (value: codeValueType) => void;
 }
 
@@ -42,7 +42,7 @@ const backgroundColor = "#000205";
 const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
   const editorRef = useRef(null);
   const editView = useRef<EditorView | null>(null);
-
+  const insertCode = useRef(false)
 
   useEffect(() => {
     // 初始化CodeMirror编辑器
@@ -80,6 +80,20 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
     };
   }, []);
 
+  useEffect(()=>{
+    if(!insertCode.current && code){
+      editView.current?.dispatch({
+        changes: {
+          from: 0,
+          to: editView.current.state.doc.length,
+          insert: code,
+        },
+      });
+      insertCode.current = true
+    }
+
+  },[code])
+
   // @TODO 代码格式化
   const formatCode = async () => {
     if (!editView.current) return;
@@ -111,6 +125,7 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
         style={{
           backgroundColor: backgroundColor,
           height: "100%",
+          overflowY: "auto",
         }}
         ref={editorRef}
       ></div>

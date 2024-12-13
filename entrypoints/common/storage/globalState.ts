@@ -10,16 +10,14 @@ export default class StateUtils {
 
   setState(state: StateProps) {
     this.state = { ...this.initialState, ...state };
-    return localStorage.setItem("global:state", JSON.stringify(this.state));
+    return storage.setItem("local:globalState", JSON.stringify(this.state));
   }
   getState() {
     try {
-      const stateStr = localStorage.getItem("global:state");
-      const state = JSON.parse(stateStr || "{}") as StateProps;
-      const _savedBefore = !!state;
+      const _savedBefore = storage.getItem("local:globalState");
       this.state = {
         ...this.initialState,
-        ...state,
+        ..._savedBefore,
       };
       if (!_savedBefore) {
         this.setState(this.state);

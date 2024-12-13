@@ -36,20 +36,13 @@ export const openEditorCodePage = async (query?: Record<string, string>) => {
   const urlWithParams = `${editCodePageUrl}#${paramsStr ?? ""}`;
 
   if (tab?.id) {
-    await browser.tabs.move(tab.id, { index: 0 });
-    await browser.tabs.update(tab.id, {
-      highlighted: true,
-      pinned: false,
-      url: urlWithParams,
-    });
-    // browser.tabs.reload(tab.id); // 这个方法会清空路由参数，切记
-  } else {
-    await browser.tabs.create({
-      index: 0,
-      url: urlWithParams,
-      pinned: false,
-    });
+    await browser.tabs.remove(tab.id);
   }
+  await browser.tabs.create({
+    index: 0,
+    url: urlWithParams,
+    pinned: false,
+  });
 };
 
 export default { sendTabMessage };

@@ -23,6 +23,8 @@ let index = -1;
 
 const useCreateComponent = () => {
   const [fullHtml, setFullHtml] = useState("");
+  const [cssStr, setCss] = useState("");
+  const [htmlStr, setHtmlStr] = useState<HTMLElement | null>(null);
 
   // 生成唯一的 classId 的表示
   const generateDataClassId = (el: HTMLElement): string => {
@@ -37,7 +39,6 @@ const useCreateComponent = () => {
 
     return dataClassId;
   };
-
 
   // 克隆元素，包括伪类/伪元素样式
   const cloneElement = (el: HTMLElement): HTMLElement => {
@@ -68,11 +69,11 @@ const useCreateComponent = () => {
       switch (child.nodeType) {
         case NodeTypes.ELEMENT_NODE:
           // 元素点需要递归处理
-                         // 跳过 style、script 和 noscript 标签
+          // 跳过 style、script 和 noscript 标签
           if (
             !(child instanceof HTMLStyleElement) &&
-            !(child instanceof HTMLScriptElement) && 
-            !((child as HTMLElement).tagName.toLowerCase() === 'noscript')
+            !(child instanceof HTMLScriptElement) &&
+            !((child as HTMLElement).tagName.toLowerCase() === "noscript")
           ) {
             clonedEl.appendChild(cloneElement(child as HTMLElement));
           }
@@ -593,7 +594,7 @@ const useCreateComponent = () => {
       });
 
       // 为当前层级生成CSS
-      css += `/* Level ${level} styles */\n`;
+      // css += `/* Level ${level} styles */\n`;
 
       // 首先生成共同属性的CSS
       propertyGroups.forEach((valueGroups, property) => {
@@ -790,14 +791,18 @@ const useCreateComponent = () => {
 
     // const newCssStr = generateCssUpdate(cssTree);
 
+    setCss(cssString);
+    setHtmlStr(elements);
     setFullHtml(fullHtml);
-    console.log("cssTree", cssTree);
-    console.log("cssString", cssString);
+    // console.log("cssTree", cssTree);
+    // console.log("cssString", cssString);
 
     doLog("组件生成完毕！！");
   };
 
   return {
+    cssStr,
+    htmlStr,
     fullHtml,
     createFullHtml,
   };

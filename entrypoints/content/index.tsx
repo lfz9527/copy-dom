@@ -12,24 +12,7 @@ export default defineContentScript({
     utils.doLog("脚本加载成功");
 
     const comHover = await createShadowUi(ctx);
-    browser.runtime.onMessage.addListener((message) => {
-      const {type } = message;
-      switch (type) {
-        case TAB_PLUGIN_ACTIONS.ON_CREATED:
-          utils.doLog("插件开启");
-          comHover.mount();
-          break;
-        case TAB_PLUGIN_ACTIONS.ON_DESTROYED:
-          comHover.remove();
-          utils.doLog("插件关闭");
-          break
-        default:
-          utils.doLog("组件启动错误");
-          break;
-      }
-    });
-
-
+    comHover.mount();
   },
 });
 

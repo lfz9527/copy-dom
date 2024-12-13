@@ -10,26 +10,18 @@ export default class CodeEdit {
 
   setCodeState(state: CodeEditStateProps) {
     this.state = { ...this.initialState, ...state };
-    return localStorage.setItem("global:state", JSON.stringify(this.state));
+    return storage.setItem("local:state", this.state);
   }
-  getCodeState() {
-    try {
-      const stateStr = localStorage.getItem("codeEdit:state");
-      const state = JSON.parse(stateStr || "{}") as CodeEditStateProps;
-      const _savedBefore = !!state;
-      this.state = {
-        ...this.initialState,
-        ...state,
-      };
-      if (!_savedBefore) {
-        this.setCodeState(this.state);
-      }
-      return this.state;
-    } catch {
-      return {
-        ...this.initialState,
-        ...this.state,
-      };
+  async getCodeState() {
+    const _savedBefore =
+      await storage.getItem<CodeEditStateProps>("local:state");
+    this.state = {
+      ...this.initialState,
+      ..._savedBefore,
+    };
+    if (!_savedBefore) {
+      this.setCodeState(this.state);
     }
+    return this.state;
   }
 }
