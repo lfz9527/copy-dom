@@ -1,0 +1,1 @@
+export type codeValueType = string | undefined

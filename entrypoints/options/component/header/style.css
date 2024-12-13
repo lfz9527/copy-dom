@@ -1,0 +1,33 @@
+.header-content {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 0 20px;
+  /* background-color: #fff; */
+  border-bottom: 1px solid #2f2f2f;
+}
+
+
+.left {
+  color: #fff
+}
+
+.left .com-name .text-display{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.right button span {
+  font-size: 13px;
+}

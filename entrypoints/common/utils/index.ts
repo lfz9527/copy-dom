@@ -1,3 +1,5 @@
+import { BrowserMessageProps } from "~/entrypoints/types";
+
 function doLog(logString: string) {
   console.log("=========插件日志: " + logString + "=========");
 }
@@ -105,7 +107,6 @@ const objectToUrlParams = (params: Record<string, any>): string => {
   return searchParams.toString();
 };
 
-
 /**
  * @description: 生成随机字符串
  * @param digit 想要生成的随机字符串长度
@@ -113,12 +114,16 @@ const objectToUrlParams = (params: Record<string, any>): string => {
  * @return 要输出的字符串
  */
 const getRandomId = (digit: number = 8, isPlainNumber: boolean = false) => {
-  return 'x'.repeat(digit).replace(/[x]/g, (c) => {
+  return "x".repeat(digit).replace(/[x]/g, (c) => {
     const radix = isPlainNumber ? 10 : 16;
     return ((Math.random() * radix) | 0).toString(radix);
   });
-}
+};
 
+// 向插件发送消息
+const sendBrowserMessage = ({ msgType, data }: BrowserMessageProps) => {
+  browser.runtime.sendMessage({ msgType, data });
+};
 
 export {
   doLog,
@@ -127,5 +132,6 @@ export {
   downloadBlob,
   classifyProps,
   objectToUrlParams,
-  getRandomId
+  getRandomId,
+  sendBrowserMessage,
 };

@@ -1,9 +1,8 @@
-import { browser } from "wxt/browser";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import HoverElement from "./components/hover-element";
 import SelectElement from "./components/select-element";
 import { useCreateComponent } from "./hooks";
-import { openFullHtmlNewTab,downloadBlob } from "./utils";
+import { openFullHtmlNewTab, downloadBlob, sendBrowserMessage } from "./utils";
 import "./app.css";
 
 const App = () => {
@@ -20,7 +19,7 @@ const App = () => {
   };
 
   const downloadCom = () => {
-    downloadBlob(fullHtml)
+    downloadBlob(fullHtml);
   };
 
   const selectChange = (el: HTMLElement) => {
@@ -30,9 +29,12 @@ const App = () => {
     el && createFullHtml(el);
   };
 
-  const openEditCodePage = () =>{
-   
-  }
+  const openEditCodePage = () => {
+    sendBrowserMessage({
+      msgType: "openEditCodePage",
+      data: {},
+    });
+  };
 
   return (
     <div className="app-wrap">

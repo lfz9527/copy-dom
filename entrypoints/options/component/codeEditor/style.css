@@ -1,0 +1,41 @@
+.code-content {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow-y: hidden;
+  padding-top: 43px;
+}
+
+.code-header {
+  color: #fff;
+  background-color: #1d1e22;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.code-header-tab {
+  background-color: #000205;
+  border-top: 3px solid #1d1e22;
+  display: inline-block;
+  font-size: 16px;
+  padding: 9px 12px;
+  color: #aaaebc;
+}
+
+.action {
+  margin-right: 10px;
+}
+
+.action .format-code {
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}

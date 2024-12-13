@@ -3,7 +3,6 @@ import { ContentScriptContext } from "wxt/client";
 import App from "../common/App";
 import utils from "@/entrypoints/utils/index";
 import { TAB_PLUGIN_ACTIONS } from "@/entrypoints/common/constant/events";
-import { openEditorCodePage } from "~/entrypoints/common/tabs";   
 import "./styles.css";
 
 export default defineContentScript({
