@@ -14,6 +14,11 @@ import {
   CssSvgIcon,
 } from "~/entrypoints/options/icon/CustomIcon";
 
+import { Popover, InputNumber } from "antd";
+import type { InputNumberProps } from 'antd';
+
+import { SettingOutlined } from "@ant-design/icons";
+
 import { boysAndGirls } from "thememirror";
 
 import type { codeValueType } from "~/entrypoints/options/type";
@@ -64,6 +69,34 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
   const editorRef = useRef(null);
   const editView = useRef<EditorView | null>(null);
   const insertCode = useRef(false);
+  const [editFontSize, setEditFontSize] = useState(12);
+
+  const fontSizeChange: InputNumberProps['onChange'] = (value) => {
+    setEditFontSize(Number(value))
+  };
+
+  const settingContent = (
+    <div>
+      <div
+        className="setting-item"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <label style={{ flexShrink: 0 }}>字体大小</label>
+        <InputNumber
+          min={10}
+          style={{
+            width: 64,
+          }}
+          defaultValue={editFontSize}
+          onChange={fontSizeChange}
+        />
+      </div>
+    </div>
+  );
 
   useEffect(() => {
     // 初始化CodeMirror编辑器
@@ -139,7 +172,7 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
     const formatFn = {
       html: beautify.html,
       css: beautify.css,
-      javascript: beautify.js
+      javascript: beautify.js,
     };
 
     const formattedCode = formatFn[language](code, formatRule[language]);
@@ -160,9 +193,16 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
           <span style={{ marginLeft: 6 }}>{language.toUpperCase()}</span>
         </div>
         <div className="action">
-          <div className="format-code" onClick={formatCode}>
+          <div className="format-code action-item" onClick={formatCode}>
             一键格式化
           </div>
+          <Popover
+            placement="topRight"
+            trigger="click"
+            content={settingContent}
+          >
+            <SettingOutlined className="action-item" onClick={() => {}} />
+          </Popover>
         </div>
       </div>
       <div
@@ -171,6 +211,7 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
           backgroundColor: backgroundColor,
           height: "100%",
           overflowY: "auto",
+          fontSize: editFontSize,
         }}
         ref={editorRef}
       ></div>

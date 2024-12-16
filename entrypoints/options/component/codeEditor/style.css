@@ -5,7 +5,7 @@
   overflow-y: hidden;
   padding-top: 43px;
 
-  ::-webkit-scrollbar{
+  ::-webkit-scrollbar {
     width: 10px;
     height: 30px;
   }
@@ -36,11 +36,19 @@
 }
 
 .action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-right: 10px;
+}
+
+
+.action .action-item {
+  cursor: pointer;
+  user-select: none;
 }
 
 .action .format-code {
   font-size: 12px;
-  cursor: pointer;
-  user-select: none;
+
 }
