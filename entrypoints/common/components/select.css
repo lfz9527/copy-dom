@@ -1,0 +1,24 @@
+.tool-content{
+  position: absolute;
+  z-index: 99999;
+
+  display: flex;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.tool-item{
+  background-color: blue;
+  color:#fff;
+  border-radius: 10px;
+  height: 20px;
+  line-height: 20px;
+  padding: 0 10px;
+
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -ms-border-radius: 10px;
+  -o-border-radius: 10px;
+
+  cursor: pointer;
+}

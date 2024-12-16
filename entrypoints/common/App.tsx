@@ -1,21 +1,19 @@
 import { useState, useEffect } from "react";
 import HoverElement from "./components/hover-element";
+import { CLICK_DIR } from "./constant/index";
 import SelectElement from "./components/select-element";
-import { TAB_PLUGIN_ACTIONS } from "@/entrypoints/common/constant/events";
 import { useCreateComponent } from "./hooks";
-import { message } from "antd";
+import { ClickAction } from "~/entrypoints/common/type";
 
-import {
-  openFullHtmlNewTab,
-  downloadBlob,
-  sendBrowserMessage,
-  doLog,
-} from "./utils";
+import { sendBrowserMessage, doLog } from "./utils";
 import { codeEditState } from "./storage";
 import "./app.css";
+import { message as antMessage } from "antd";
 
 const App = () => {
-  const [start, setStart] = useState(false);
+  const [remove, setRemove] = useState(true);
+  const [hover, setHover] = useState(false);
+  const [select, setSelect] = useState(false);
   const [element, setElement] = useState<null | HTMLElement>(null);
   const { cssStr, htmlStr, fullHtml, createFullHtml } = useCreateComponent();
 
@@ -23,45 +21,37 @@ const App = () => {
     doLog("插件组件开启");
   }, []);
 
-  const startSelectCom = () => {
-    setStart(true);
-  };
-
-  const previewCom = () => {
-    openFullHtmlNewTab(fullHtml);
-  };
-
-  const downloadCom = () => {
-    downloadBlob(fullHtml);
-  };
-
-  const selectChange = (el: HTMLElement) => {
-    message.open({
-      type: "loading",
-      content: "正在生成组件代码中...",
-      duration: 0,
-    });
+  const selectChange = (ClickDir: ClickAction, el: HTMLElement) => {
     setElement(el);
-    el && createFullHtml(el);
-    setStart(false);
+    if (ClickDir === CLICK_DIR[0]) {
+      createFullHtml(el);
+    } else if (ClickDir === CLICK_DIR[2]) {
+      setSelect(true);
+    }
+    setHover(false);
   };
 
   useEffect(() => {
-    htmlStr && setCache();
+    htmlStr && toCodeEdit();
   }, [htmlStr]);
 
-  const setCache = async () => {
+  const uninstall = () => {
+    !remove && setRemove(true);
+  };
+
+  // 去代码编辑器编辑
+  const toCodeEdit = async () => {
     await codeEditState.setCodeState({
       css: cssStr,
       html: htmlStr ? htmlStr.outerHTML : "",
     });
 
     setTimeout(() => {
+      uninstall();
       sendBrowserMessage({
         msgType: "openEditCodePage",
         data: {},
       });
-      message.destroy()
     }, 100);
   };
 
@@ -69,47 +59,44 @@ const App = () => {
     const { type } = message;
     switch (type) {
       case "PluginStageChange":
-        doLog(start ? "插件关闭" : "插件开启");
-        setStart(!start);
+        const msg = !remove ? "插件关闭" : "插件开启"
+        doLog(msg);
+        setRemove(!remove);
+        setHover(true);
         break;
     }
   });
 
-  // const openEditCodePage = async () => {
-  //   const res= await codeEditState.getCodeState()
-  //   console.log(123,res);
-
-  // };
+  const selectParent = () => {
+    if (element) {
+      const parent = element.parentElement;
+      parent && createFullHtml(parent);
+      if (parent) antMessage.error("当前节点没有父级节点");
+    }
+  };
 
   return (
     <div className="app-wrap">
-      {start && <HoverElement onChange={selectChange} />}
+      {!remove && (
+        <>
+          {hover && <HoverElement onChange={selectChange} />}
 
-      {/* <div
-        className="app-wrap-select"
-        style={{
-          display: !start ? "flex" : "none",
-        }}
-      >
-        <button className="primary" onClick={startSelectCom}>
-          选择
-        </button>
-        <button className="primary" onClick={previewCom}>
-          预览
-        </button>
-        <button className="primary" onClick={downloadCom}>
-          下载
-        </button>
-        <button className="primary" onClick={openEditCodePage}>
-          打开代码编辑器
-        </button>
-      </div> */}
-
-      {/* {start ? (
-        <HoverElement onChange={selectChange} />
-      ) : (
-        <SelectElement el={element} />
-      )} */}
+          {!hover && select && (
+            <SelectElement
+              el={element}
+              selectParent={selectParent}
+              selectCurrent={() => {
+                element && createFullHtml(element);
+              }}
+              resSelect={() => {
+                setElement(null);
+                setSelect(false);
+                setHover(true);
+              }}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

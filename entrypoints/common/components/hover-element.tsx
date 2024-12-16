@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-
+import { CLICK_DIR } from "../constant/index";
 import { getElPosition } from "../utils";
 import Mask from "./mask";
+import { ClickDirection, ClickAction } from "~/entrypoints/common/type";
 
 interface Prop {
-  onChange?: (el: HTMLElement) => void;
+  onChange?: (ClickDir: ClickAction, el: HTMLElement) => void;
 }
 
 const HoverElement: React.FC<Prop> = ({ onChange }) => {
@@ -17,14 +18,20 @@ const HoverElement: React.FC<Prop> = ({ onChange }) => {
   // 添加一个状态来追踪是否启用了光标样式
   const isCursorEnabled = useRef<boolean>(false);
   const [selectDom, setSelectDom] = useState(null);
+  const [clickDir, setClickDir] = useState<ClickAction>(CLICK_DIR[0]);
 
   useEffect(() => {
     document.addEventListener("mousemove", createHover);
+    // document.addEventListener("mousedown", clickDom, true);
     document.addEventListener("click", clickDom, true);
+    // 禁用右键菜单并显示自定义内容
+    document.addEventListener("contextmenu", clickDom);
+
     toggleCursor();
 
     return () => {
       document.removeEventListener("mousemove", createHover);
+      document.removeEventListener("contextmenu", clickDom);
       document.removeEventListener("click", clickDom, true);
 
       isCursorEnabled.current = true;
@@ -75,7 +82,7 @@ const HoverElement: React.FC<Prop> = ({ onChange }) => {
   useEffect(() => {
     if (!isCursorEnabled.current && selectDom) {
       setSelectDom(null);
-      onChange && onChange(selectDom);
+      onChange && onChange(clickDir, selectDom);
       toggleCursor();
     }
   }, [selectDom, isCursorEnabled.current]);
@@ -84,16 +91,17 @@ const HoverElement: React.FC<Prop> = ({ onChange }) => {
   function clickDom(e: any) {
     e.preventDefault();
     e.stopPropagation();
+
+    console.log("e", e);
+
+    const dir = e.button as ClickDirection;
+    setClickDir(CLICK_DIR[dir]);
     setSelectDom(e.target);
 
     // 恢复默认 cursor 值
     toggleCursor();
   }
 
-  return (
-    <Mask
-      post={post}
-    />
-  );
+  return <Mask post={post} />;
 };
 export default HoverElement;

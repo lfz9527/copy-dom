@@ -17,6 +17,7 @@ import type {
   HTMLTags,
 } from "../config/type";
 import { CLASS_PREFIX, DATA_CLASS_ID, RESET_CSS, NodeTypes } from "../constant";
+import { message } from "antd";
 
 let elementData = new WeakMap<HTMLElement, string>();
 let index = -1;
@@ -806,6 +807,12 @@ const useCreateComponent = () => {
   const createFullHtml = async (el: HTMLElement) => {
     doLog("正在生成组件....");
 
+    message.open({
+      type: "loading",
+      content: "正在生成组件代码中...",
+      duration: 0,
+    });
+
     // 设置根节点属性
     el.setAttribute("is_root_dom", "true");
 
@@ -829,6 +836,7 @@ const useCreateComponent = () => {
     // console.log("cssTree", cssTree);
     // console.log("cssString", cssString);
 
+    // message.destroy()
     doLog("组件生成完毕！！");
   };
 

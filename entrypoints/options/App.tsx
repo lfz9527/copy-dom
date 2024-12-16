@@ -87,15 +87,15 @@ const App = () => {
             <Splitter.Panel>
               <CodeEditor language="html" code={htmlCode} onChange={htmlChange} />
             </Splitter.Panel>
-            <Splitter.Panel>
+            {/* <Splitter.Panel>
               <CodeEditor language="javascript" code={jsCode} onChange={jsChange} />
-            </Splitter.Panel>
+            </Splitter.Panel> */}
           </Splitter>
         </Splitter.Panel>
         <Splitter.Panel
           defaultSize="70%"
           min="20%"
-          max="70%"
+          max="80%"
           style={{
             overflow: "hidden",
           }}
