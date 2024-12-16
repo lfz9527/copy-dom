@@ -3,6 +3,8 @@ import HoverElement from "./components/hover-element";
 import SelectElement from "./components/select-element";
 import { TAB_PLUGIN_ACTIONS } from "@/entrypoints/common/constant/events";
 import { useCreateComponent } from "./hooks";
+import { message } from "antd";
+
 import {
   openFullHtmlNewTab,
   downloadBlob,
@@ -34,6 +36,11 @@ const App = () => {
   };
 
   const selectChange = (el: HTMLElement) => {
+    message.open({
+      type: "loading",
+      content: "正在生成组件代码中...",
+      duration: 0,
+    });
     setElement(el);
     el && createFullHtml(el);
     setStart(false);
@@ -54,6 +61,7 @@ const App = () => {
         msgType: "openEditCodePage",
         data: {},
       });
+      message.destroy()
     }, 100);
   };
 

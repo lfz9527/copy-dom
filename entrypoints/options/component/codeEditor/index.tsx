@@ -6,6 +6,7 @@ import { EditorState } from "@codemirror/state";
 import { css } from "@codemirror/lang-css"; // 引入语言包
 import { html } from "@codemirror/lang-html"; // 引入语言包
 import { javascript } from "@codemirror/lang-javascript"; // 引入语言包
+import beautify from "js-beautify";
 
 import {
   HtmlSvgIcon,
@@ -31,10 +32,30 @@ const lang = {
   javascript: () => javascript(),
 };
 
+// 定义通用规则和特定语言规则
+const generalRules = {
+  indent_size: 2,
+};
+
+const formatRule = {
+  css: {
+    ...generalRules,
+  },
+  html: {
+    ...generalRules,
+    wrap_line_length: 80,
+    unformatted: ["code", "pre"],
+  },
+  javascript: {
+    ...generalRules,
+    space_in_empty_paren: true,
+  },
+};
+
 const icon = {
-  css: <CssSvgIcon/>,
-  html: <HtmlSvgIcon/>,
-  javascript: <JsSvgIcon/>,
+  css: <CssSvgIcon />,
+  html: <HtmlSvgIcon />,
+  javascript: <JsSvgIcon />,
 };
 
 const backgroundColor = "#000205";
@@ -42,7 +63,7 @@ const backgroundColor = "#000205";
 const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
   const editorRef = useRef(null);
   const editView = useRef<EditorView | null>(null);
-  const insertCode = useRef(false)
+  const insertCode = useRef(false);
 
   useEffect(() => {
     // 初始化CodeMirror编辑器
@@ -80,8 +101,8 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
     };
   }, []);
 
-  useEffect(()=>{
-    if(!insertCode.current && code){
+  useEffect(() => {
+    if (!insertCode.current && code) {
       editView.current?.dispatch({
         changes: {
           from: 0,
@@ -89,17 +110,40 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
           insert: code,
         },
       });
-      insertCode.current = true
+      insertCode.current = true;
     }
+  }, [code]);
 
-  },[code])
+  const updateCodeText = (newCode: string | undefined) => {
+    if (!editView.current) return;
+    // 保存当前光标位置
+    const selection = editView.current.state.selection;
+
+    editView.current.dispatch({
+      changes: {
+        from: 0,
+        to: editView.current.state.doc.length,
+        insert: newCode,
+      },
+      // 保持原有的选择状态
+      selection: selection,
+    });
+  };
 
   // @TODO 代码格式化
   const formatCode = async () => {
     if (!editView.current) return;
 
     const code = editView.current.state.doc.toString();
-    let formattedCode = "";
+
+    const formatFn = {
+      html: beautify.html,
+      css: beautify.css,
+      javascript: beautify.js
+    };
+
+    const formattedCode = formatFn[language](code, formatRule[language]);
+    updateCodeText(formattedCode);
 
     try {
       // onChange(formattedCode);
@@ -113,7 +157,7 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
       <div className="code-header">
         <div className="code-header-tab">
           {icon[language]}
-          <span style={{marginLeft:6}}>{language.toUpperCase()}</span>
+          <span style={{ marginLeft: 6 }}>{language.toUpperCase()}</span>
         </div>
         <div className="action">
           <div className="format-code" onClick={formatCode}>
@@ -122,6 +166,7 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
         </div>
       </div>
       <div
+        className="code-editor"
         style={{
           backgroundColor: backgroundColor,
           height: "100%",

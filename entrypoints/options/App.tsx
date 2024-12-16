@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Splitter } from "antd";
+import { Splitter,message } from "antd";
 import Header from "./component/header/index";
 import CodeEditor from "./component/codeEditor/index";
-import CodePreview from "./component/codePreview";
+import CodePreview from "./component/codePreview/index";
 import type { codeValueType } from "./type";
 import { globalState, codeEditState } from "~/entrypoints/common/storage";
+import copy from 'copy-to-clipboard'
+
 import "./style.css";
 
 const { reset_css = "" } = globalState.getState();
@@ -27,6 +29,8 @@ const App = () => {
 
   // 代码复制
   const copyCode = () => {
+    copy(srcDoc);
+    message.success("复制成功");
     console.log("copyCode");
   };
   // 刷新预览

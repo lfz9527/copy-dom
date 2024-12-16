@@ -5,273 +5,178 @@ export const CLASS_PREFIX = "JY-SITE-COM";
 
 export const RESET_CSS = `
 html,
+body {
+  height: 100%;
+  /* 文字风格 Sans-serif 各笔画粗细相同，Serif 笔画粗细不同，monospace 等宽体，cursive草书，fantasy梦幻 */
+  font-family: "Microsoft YaHei", sans-serif, "Helvetica Neue", Helvetica, Arial,
+    "黑体", "宋体", Arial;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* 重置各标签的默认样式 */
 body,
-body div,
-span,
-object,
-iframe,
+a,
+body,
+center,
+cite,
+code,
+dd,
+del,
+div,
+dl,
+dt,
+em,
+fieldset,
+figcaption,
+figure,
+footer,
+form,
 h1,
 h2,
 h3,
 h4,
 h5,
 h6,
-p,
-blockquote,
-pre,
-abbr,
-address,
-cite,
-code,
-del,
-dfn,
-em,
+header,
+hr,
+html,
 img,
-ins,
-kbd,
-q,
-samp,
-small,
-strong,
-sub,
-sup,
-var,
-b,
-i,
-dl,
-dt,
-dd,
-ol,
-ul,
-li,
-fieldset,
-form,
+input,
 label,
 legend,
-table,
-caption,
-tbody,
-tfoot,
-thead,
-tr,
-th,
-td,
-article,
-aside,
-figure,
-footer,
-header,
-menu,
-nav,
-section,
-time,
+li,
 mark,
-audio,
-video,
-details,
-summary {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	font-size: 100%;
-	font-weight: normal;
-	vertical-align: baseline;
-	background: transparent;
+ol,
+p,
+section,
+span,
+textarea,
+time,
+td,
+th,
+ul {
+  font-size: 100%;
+  font-weight: normal;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-style: normal;
+  /*  自动换行 */
+  word-wrap: break-word;
+  /*  强制英文单词断行 */
+  word-break: break-all;
+  border: 0;
 }
-
-main,
+/*  设置标签为块级分类 */
 article,
 aside,
+details,
+fieldset,
+figcaption,
 figure,
 footer,
 header,
+main,
 nav,
-section,
-details,
-summary {
-	display: block;
+section {
+  display: block;
 }
-
-html {
-	box-sizing: border-box;
-}
-
-*,
-*:before,
-*:after {
-	box-sizing: inherit;
-}
-
-img {
-	max-width: 100%;
-}
-
-ul {
-	list-style: none;
-}
-
-blockquote,
-q {
-	quotes: none;
-}
-
-blockquote:before,
-blockquote:after,
-q:before,
-q:after {
-	content: '';
-	content: none;
-}
-
-a {
-	margin: 0;
-	padding: 0;
-	font-size: 100%;
-	vertical-align: baseline;
-	background: transparent;
-}
-
-del {
-	text-decoration: line-through;
-}
-
-abbr[title],
-dfn[title] {
-	border-bottom: 1px dotted #000;
-	cursor: help;
-}
-
-table {
-	border-collapse: separate;
-	border-spacing: 0;
-	text-align: left;
-}
-
-th {
-	font-weight: bold;
-	vertical-align: bottom;
-}
-
-td {
-	font-weight: normal;
-	vertical-align: top;
-}
-
-td img {
-	vertical-align: top;
-}
-
-hr {
-	display: block;
-	height: 1px;
-	border: 0;
-	border-top: 1px solid #999;
-	margin: 1rem 0;
-	padding: 0;
-}
-
-input,
-select {
-	vertical-align: middle;
-}
-
-pre {
-	white-space: pre-line;
-}
-
-input[type="radio"] {
-	vertical-align: text-bottom;
-}
-
-input[type="checkbox"] {
-	vertical-align: bottom;
-}
-
-small {
-	font-size: .8rem;
-}
-
-strong {
-	font-weight: bold;
-}
-
-sub,
-sup {
-	font-size: .8rem;
-	line-height: 0;
-	position: relative;
-}
-
-sup {
-	top: -0.5rem;
-}
-
-sub {
-	bottom: -0.25rem;
-}
-
-pre,
-code,
-kbd,
-samp {
-	font-family: monospace, sans-serif;
-}
-
-label,
-input[type=button],
-input[type=submit],
-input[type=file],
-button {
-	cursor: pointer;
-}
-
+/* 去除input标签的默认样式 */
 button,
 input,
-select,
 textarea {
-	margin: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+  font-family: "Microsoft YaHei", sans-serif, "Helvetica Neue", Helvetica, Arial,
+    "黑体", "宋体", Arial;
+  line-height: 1em;
+  background-color: transparent;
+  border: 0;
+  outline: none;
+  appearance: none;
+}
+/*  禁止多文本框手动拖动大小 */
+textarea {
+  appearance: none;
+  resize: none;
+}
+/* 去掉按下的阴影盒子 */
+input,
+textarea,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+/*  清除a标签下划线 */
+a,
+a:visited {
+  text-decoration: none !important;
+}
+a:focus,
+a:active,
+a:hover {
+  outline: none;
+}
+/*  清除列表前面的点 */
+ol,
+li,
+ul {
+  list-style: none;
+}
+/*  清除IE下图片的边框 */
+img {
+  font-size: 0;
+  border-style: none;
+}
+/*  解决chrome浏览器默认黄色背景问题 */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  box-shadow: 0 0 0 1000px #fff inset;
 }
 
-ins {
-	background-color: var(--highlight-color);
-	color: #000;
-	text-decoration: none;
+input[type="button"],
+input[type="submit"],
+input[type="file"],
+button {
+  cursor: pointer;
 }
 
-mark {
-	background-color: var(--highlight-color);
-	color: #000;
-	font-style: italic;
-	font-weight: bold;
+/*  设置默认滚动条样式 */
+::input-placeholder {
+  color: #afbdcc;
 }
-
-blockquote {
-	padding: 2rem;
-	border-left: 1px solid #333;
+:placeholder {
+  color: #afbdcc;
 }
-
-.clearfix:after {
-	content: "";
-	display: table;
-	clear: both;
+::placeholder {
+  color: #afbdcc;
 }
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-	text-wrap: balance
+:input-placeholder {
+  color: #afbdcc;
 }
-
-p {
-	text-wrap: pretty;
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-	:has(:target) {
-		scroll-behavior: smooth;
-	}
+::-webkit-scrollbar-track {
+  background-color: #f5f5f5;
+}
+::-webkit-scrollbar-track-piece {
+  background-color: #f5f5f5;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-corner {
+  background-color: #f5f5f5;
+}
+::-webkit-resizer {
+  background-repeat: no-repeat;
+  background-position: bottom right;
 }
 
 

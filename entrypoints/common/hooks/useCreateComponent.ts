@@ -763,19 +763,53 @@ const useCreateComponent = () => {
       `;
   };
 
+  // 使用requestAnimationFrame进行分批处理，以避免阻塞主线程
+  const processWithRAF = async (tasks: Array<() => any>) => {
+    return new Promise((resolve) => {
+      let index = 0;
+      const results: any[] = [];
+
+      const process = () => {
+        const start = performance.now();
+
+        // 在每一帧中执行尽可能多的任务，但不超过16ms
+        while (index < tasks.length && performance.now() - start < 16) {
+          try {
+            const result = tasks[index]();
+            results.push(result);
+          } catch (error) {
+            console.error(`Task ${index} failed:`, error);
+          }
+
+          index++;
+        }
+
+        if (index < tasks.length) {
+          // 如果还有任务，继续在下一帧执行
+          requestAnimationFrame(process);
+        } else {
+          // 所有任务完成
+          resolve(results);
+        }
+      };
+
+      requestAnimationFrame(process);
+    });
+  };
+
   // 清理其他资源
   const cleanup = () => {
     index = -1;
     elementData = new WeakMap<HTMLElement, string>();
   };
 
-  const createFullHtml = (el: HTMLElement) => {
+  const createFullHtml = async (el: HTMLElement) => {
     doLog("正在生成组件....");
-
-    cleanup();
 
     // 设置根节点属性
     el.setAttribute("is_root_dom", "true");
+
+    cleanup();
 
     // 克隆 dom
     const clonedEl = cloneElement(el);
@@ -788,8 +822,6 @@ const useCreateComponent = () => {
     const cssString = generateCssUpdate(cssTree);
     // css + dom 结构 生成完整的html 文档
     const fullHtml = generateComponentTree({ css: cssString, html: elements });
-
-    // const newCssStr = generateCssUpdate(cssTree);
 
     setCss(cssString);
     setHtmlStr(elements);

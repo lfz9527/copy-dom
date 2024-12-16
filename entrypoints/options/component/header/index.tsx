@@ -29,6 +29,7 @@ const Header: React.FC<Props> = (prop) => {
     if (name === "无名称组件") setName("");
     setBool(true);
   };
+  
 
   return (
     <Layout.Header className="header-content">
@@ -58,6 +59,7 @@ const Header: React.FC<Props> = (prop) => {
       <div className="right">
         <Button
           type="primary"
+          id="copy-code-btn"
           onClick={() => {
             copyCode && copyCode();
           }}
