@@ -101,30 +101,70 @@ const useCreateComponent = () => {
   };
 
   // 收集样式树
-  const collectStyleTree = (el: HTMLElement): StyleNode => {
-    // 获取计算样式
-    const rules = resolveStyleContent(el);
-    const dataClassId = generateDataClassId(el);
+  const collectStyleTree = (el: HTMLElement): Promise<StyleNode> => {
+    return new Promise((resolve) => {
+      const queue: HTMLElement[] = [el];
+      const batchSize = 50;
+      const styleNodes = new Map<HTMLElement, StyleNode>();
+      let rootNode: StyleNode;
 
-    // 给每个节点 添加 dataClassId
-    el.setAttribute(DATA_CLASS_ID, dataClassId);
+      const processElement = (element: HTMLElement): StyleNode => {
+        const rules = resolveStyleContent(element);
+        const dataClassId = generateDataClassId(element);
+        element.setAttribute(DATA_CLASS_ID, dataClassId);
 
-    // 递归处理子元素
-    const children = Array.from(el.children)
-      .filter((child): child is HTMLElement => child instanceof HTMLElement)
-      .map((child) => collectStyleTree(child));
+        return {
+          type: "Element",
+          tagName: element.tagName.toLowerCase(),
+          [DATA_CLASS_ID]: dataClassId!,
+          styles: {
+            type: "StyleSheet",
+            rules,
+          },
+          children: [],
+        };
+      };
 
-    // 构建并返回节点
-    return {
-      type: "Element",
-      tagName: el.tagName.toLowerCase(),
-      [DATA_CLASS_ID]: dataClassId!,
-      styles: {
-        type: "StyleSheet",
-        rules,
-      },
-      children,
-    };
+      const processBatch = () => {
+        const currentBatch = queue.splice(0, batchSize);
+
+        currentBatch.forEach((element) => {
+          const node = processElement(element);
+          styleNodes.set(element, node);
+
+          // 保存根节点引用
+          if (element === el) {
+            rootNode = node;
+          }
+
+          Array.from(element.children)
+            .filter(
+              (child): child is HTMLElement => child instanceof HTMLElement
+            )
+            .forEach((child) => queue.push(child));
+        });
+
+        if (queue.length > 0) {
+          // 使用 setTimeout 代替 requestIdleCallback 以确保更快的执行
+          setTimeout(processBatch, 0);
+        } else {
+          buildTree();
+          resolve(rootNode);
+        }
+      };
+
+      const buildTree = () => {
+        styleNodes.forEach((node, element) => {
+          const parent = element.parentElement;
+          if (parent && styleNodes.has(parent)) {
+            const parentNode = styleNodes.get(parent)!;
+            parentNode.children.push(node);
+          }
+        });
+      };
+
+      processBatch();
+    });
   };
 
   // 添加继承样式处理工具
@@ -478,7 +518,6 @@ const useCreateComponent = () => {
   // CSS生成逻辑
   const generateCssUpdate = (node: StyleNode) => {
     let css = "";
-
     // 按层级分组节点
     const groupNodesByLevel = (node: StyleNode): Map<number, StyleNode[]> => {
       const levelMap = new Map<number, StyleNode[]>();
@@ -487,6 +526,7 @@ const useCreateComponent = () => {
         if (!levelMap.has(level)) {
           levelMap.set(level, []);
         }
+
         levelMap.get(level)!.push(node);
         node.children.forEach((child) => traverse(child, level + 1));
       };
@@ -803,24 +843,25 @@ const useCreateComponent = () => {
     elementData = new WeakMap<HTMLElement, string>();
   };
 
+  // 修改 createFullHtml 函数以使用异步 collectStyleTree
   const createFullHtml = async (el: HTMLElement) => {
     doLog("正在生成组件....");
 
     message.open({
       type: "loading",
-      content: "正在生成组件代码中...",
+      content: "正在生成组件",
       duration: 0,
     });
-
-    // 设置根节点属性
+    // 使用 setTimeout 让 message 有时间显示
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     el.setAttribute("is_root_dom", "true");
-
     cleanup();
 
     // 克隆 dom
     const clonedEl = cloneElement(el);
+
     // 生成css 树
-    const cssTree = collectStyleTree(el);
+    const cssTree = await collectStyleTree(el);
     // css 树生成 css 样式表
     const { cssString, singleStyle } = generateCssUpdate(cssTree);
     // 处理dome 结构
@@ -832,11 +873,11 @@ const useCreateComponent = () => {
     setCss(cssString);
     setHtmlStr(elements);
     setFullHtml(fullHtml);
-    console.log("elements", elements);
-    console.log("cssTree", cssTree);
+    // console.log("elements", elements);
+    // console.log("cssTree", cssTree);
     // console.log("cssString", cssString);
 
-    // message.destroy()
+    message.destroy();
     doLog("组件生成完毕！！");
   };
 

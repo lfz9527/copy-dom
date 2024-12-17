@@ -63,6 +63,7 @@ const App = () => {
         doLog(msg);
         setRemove(!remove);
         setHover(true);
+        setSelect(false)
         break;
     }
   });
@@ -71,7 +72,7 @@ const App = () => {
     if (element) {
       const parent = element.parentElement;
       parent && createFullHtml(parent);
-      if (parent) antMessage.error("当前节点没有父级节点");
+      if (!parent) antMessage.error("当前节点没有父级节点");
     }
   };
 

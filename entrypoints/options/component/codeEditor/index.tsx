@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { basicSetup } from "codemirror";
 import { EditorView, keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
@@ -15,7 +15,7 @@ import {
 } from "~/entrypoints/options/icon/CustomIcon";
 
 import { Popover, InputNumber } from "antd";
-import type { InputNumberProps } from 'antd';
+import type { InputNumberProps } from "antd";
 
 import { SettingOutlined } from "@ant-design/icons";
 
@@ -49,7 +49,29 @@ const formatRule = {
   html: {
     ...generalRules,
     wrap_line_length: 80,
-    unformatted: ["code", "pre"],
+    indent_char: " ", // 使用空格作为缩进字符
+    indent_with_tabs: false, // 不使用 tab 缩进
+    eol: "\n", // 使用 \n 作为换行符
+    end_with_newline: true, // 文件末尾添加换行
+    preserve_newlines: true, // 保留原有的换行
+    max_preserve_newlines: 2, // 最多保留2个连续换行
+    indent_inner_html: true, // 缩进 <head> 和 <body>
+    wrap_attributes: "auto", // 属性换行方式
+    wrap_attributes_indent_size: 2, // 属性换行后的缩进
+    unformatted: [
+      // 这些标签中的内容保持原样
+      "pre",
+      "code",
+      "textarea",
+    ],
+    inline: [
+      // 这些标签保持内联
+      "span",
+      "i",
+      "b",
+      "em",
+      "strong",
+    ],
   },
   javascript: {
     ...generalRules,
@@ -71,8 +93,8 @@ const CodeEditor: React.FC<Props> = ({ language, code, onChange }) => {
   const insertCode = useRef(false);
   const [editFontSize, setEditFontSize] = useState(12);
 
-  const fontSizeChange: InputNumberProps['onChange'] = (value) => {
-    setEditFontSize(Number(value))
+  const fontSizeChange: InputNumberProps["onChange"] = (value) => {
+    setEditFontSize(Number(value));
   };
 
   const settingContent = (
