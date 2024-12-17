@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { Splitter,message } from "antd";
+import { Splitter, message } from "antd";
 import Header from "./component/header/index";
 import CodeEditor from "./component/codeEditor/index";
 import CodePreview from "./component/codePreview/index";
 import type { codeValueType } from "./type";
 import { globalState, codeEditState } from "~/entrypoints/common/storage";
-import copy from 'copy-to-clipboard'
-
+import copy from "copy-to-clipboard";
 import "./style.css";
+
+import { CLASS_PREFIX } from "~/entrypoints/common/constant";
 
 const { reset_css = "" } = globalState.getState();
 
@@ -56,11 +57,21 @@ const App = () => {
   const handleCode = () => {
     setSrcDoc(`
       <html>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta name="description" content="这是一个组件预览网页">
+          <meta name="keywords" content="HTML, CSS, JavaScript">
+          <meta name="author" content="jy">
+          <title>组件</title>
         <style>
-        ${reset_css}
-        ${cssCode}
+          ${reset_css}
+          ${cssCode}
         </style>
-        <body>${htmlCode}</body>
+        <body> 
+          <div class=${CLASS_PREFIX}>
+          ${htmlCode}
+          </div>
+        </body>
         <script>${jsCode}</script>
       </html>
     `);
@@ -85,7 +96,11 @@ const App = () => {
               <CodeEditor language="css" code={cssCode} onChange={cssChange} />
             </Splitter.Panel>
             <Splitter.Panel>
-              <CodeEditor language="html" code={htmlCode} onChange={htmlChange} />
+              <CodeEditor
+                language="html"
+                code={htmlCode}
+                onChange={htmlChange}
+              />
             </Splitter.Panel>
             {/* <Splitter.Panel>
               <CodeEditor language="javascript" code={jsCode} onChange={jsChange} />

@@ -5,6 +5,7 @@ import {
   PcIcon,
   PhoneIcon,
 } from "~/entrypoints/options/icon/CustomIcon";
+
 import "./style.css";
 
 interface Prop {
@@ -104,7 +105,6 @@ const CodePreview: React.FC<Prop> = ({ srcDoc }) => {
               {item.icon}
             </div>
           ))}
-          {/* {curIframe?.size} */}
         </div>
       </div>
       <div className="preview-container">
@@ -113,7 +113,6 @@ const CodePreview: React.FC<Prop> = ({ srcDoc }) => {
             <iframe
               id="output-doc"
               ref={iframe}
-              // srcDoc={srcDoc}
               src={url}
               style={{
                 width: "100%",

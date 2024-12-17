@@ -19,6 +19,13 @@ import type {
 import { CLASS_PREFIX, DATA_CLASS_ID, RESET_CSS, NodeTypes } from "../constant";
 import { message } from "antd";
 
+interface MergedStyle {
+  selectors: string[];
+  rules: Map<string, StyleNode["styles"]["rules"][0]>;
+}
+
+type singleStyleType = [string, MergedStyle][];
+
 let elementData = new WeakMap<HTMLElement, string>();
 let index = -1;
 
@@ -34,7 +41,7 @@ const useCreateComponent = () => {
 
     index++;
 
-    const dataClassId = `${CLASS_PREFIX}_${el.tagName}${index}`;
+    const dataClassId = `${el.tagName}${index}`;
 
     elementData.set(el, dataClassId);
 
@@ -353,6 +360,20 @@ const useCreateComponent = () => {
     return formTags.includes(el.tagName.toLowerCase());
   };
 
+  // 处理宽高值，向上取整
+  const formatDimension = (property: string, value: string) => {
+    if (property === "width" || property === "height") {
+      // 提取数值和单位
+      const match = value.match(/^([\d.]+)(.*)$/);
+      if (match) {
+        const [, num, unit] = match;
+        // 向上取整
+        return `${Math.ceil(parseFloat(num))}${unit}`;
+      }
+    }
+    return value;
+  };
+
   // 处理获得的构造函数
   const resolveStyleContent = (el: HTMLElement) => {
     let rules: StyleNode["styles"]["rules"] = [];
@@ -376,7 +397,7 @@ const useCreateComponent = () => {
           rules.push({
             type: "Rule",
             property: key,
-            value,
+            value: formatDimension(key, value),
             important: computedStyle.getPropertyPriority(key) === "important",
           });
         }
@@ -384,7 +405,7 @@ const useCreateComponent = () => {
         rules.push({
           type: "Rule",
           property: key,
-          value,
+          value: formatDimension(key, value),
           important: computedStyle.getPropertyPriority(key) === "important",
         });
       }
@@ -436,61 +457,25 @@ const useCreateComponent = () => {
     return realRules;
   };
 
-  // 将规则转换为CSS字符串
-  const ruleToString = (rule: StyleNode["styles"]["rules"][0]): string => {
-    return `${rule.property}: ${rule.value}${
-      rule.important ? " !important" : ""
-    };`;
+  // 使用属性值-属性名生成类名
+  const generatePropertyClassName = (property: string, value: string) => {
+    // 处理特殊字符
+    const cleanValue = value
+      .trim()
+      // 将百分比符号替换为 'percent'
+      .replace(/%/g, "-percent")
+      // 替换特殊字符为连字符
+      .replace(/[!@#$%^&*()+=\[\]{}'";:<>?~,./\\]/g, "-")
+      // 替换空格为连字符
+      .replace(/\s+/g, "-")
+      // 移除连续的连字符
+      .replace(/-+/g, "-")
+      .toLowerCase();
+
+    return `${property}-${cleanValue}`;
   };
 
   // CSS生成逻辑
-  const generateCSS = (node: StyleNode): string => {
-    let css = "";
-
-    // 按伪类/伪元素分组规则
-    const normalRules: StyleNode["styles"]["rules"] = [];
-    const pseudoRules: Record<string, StyleNode["styles"]["rules"]> = {};
-
-    node.styles.rules.forEach((rule) => {
-      if (rule.pseudo) {
-        pseudoRules[rule.pseudo] = pseudoRules[rule.pseudo] || [];
-        pseudoRules[rule.pseudo].push(rule);
-      } else {
-        normalRules.push(rule);
-      }
-    });
-
-    // 生成普通样式
-    const normalStyles = normalRules
-      .filter((rule) => rule.value !== "")
-      .map(ruleToString)
-      .join("\n  ");
-
-    if (normalStyles) {
-      css += `.${node[DATA_CLASS_ID]} {\n  ${normalStyles}\n}\n\n`;
-    }
-
-    // 生成伪类/伪元素样式
-    Object.entries(pseudoRules).forEach(([pseudo, rules]) => {
-      const pseudoStyles = rules
-        .filter((rule) => rule.value !== "")
-        .map(ruleToString)
-        .join("\n  ");
-
-      if (pseudoStyles) {
-        css += `.${node[DATA_CLASS_ID]}${pseudo} {\n  ${pseudoStyles}\n}\n\n`;
-      }
-    });
-
-    // 递归处理子节点;
-    node.children.forEach((child) => {
-      css += generateCSS(child);
-    });
-
-    return css;
-  };
-
-  // 升级CSS生成逻辑
   const generateCssUpdate = (node: StyleNode) => {
     let css = "";
 
@@ -512,11 +497,9 @@ const useCreateComponent = () => {
 
     const levelMap = groupNodesByLevel(node);
 
-    // 用于最终合并的样式映射
-    interface MergedStyle {
-      selectors: string[];
-      rules: Map<string, StyleNode["styles"]["rules"][0]>;
-    }
+    console.log("levelMap", levelMap);
+
+    // 用于最终合并的样式映
     const finalStyles = new Map<string, MergedStyle>();
 
     //处理伪类/伪元素的样式映射
@@ -527,7 +510,7 @@ const useCreateComponent = () => {
     const pseudoStyles = new Map<string, PseudoStyle[]>();
 
     // 按层级处理
-    levelMap.forEach((nodes, level) => {
+    levelMap.forEach((nodes) => {
       interface StyleInfo {
         selector: string;
         rules: Map<string, StyleNode["styles"]["rules"][0]>;
@@ -594,9 +577,6 @@ const useCreateComponent = () => {
         });
       });
 
-      // 为当前层级生成CSS
-      // css += `/* Level ${level} styles */\n`;
-
       // 首先生成共同属性的CSS
       propertyGroups.forEach((valueGroups, property) => {
         valueGroups.forEach((group) => {
@@ -641,7 +621,6 @@ const useCreateComponent = () => {
               rules: new Map(),
             });
           }
-
           nodeStyle.rules.forEach((rule) => {
             finalStyles.get(selectorKey)!.rules.set(rule.property, rule);
           });
@@ -649,9 +628,28 @@ const useCreateComponent = () => {
       });
     });
 
+    console.log("finalStyles", finalStyles);
+
+    //  这里对样式只有一个属性的进行处理
+    finalStyles.forEach((style) => {
+      const rules = Array.from(style.rules.values());
+      if (rules.length === 1) {
+        const property = rules.map(
+          (rule) =>
+            `.${generatePropertyClassName(rule.property, rule.value)}${
+              rule.important ? "-important" : ""
+            }`
+        );
+        // 如果只有一个属性，则使用 属性名-属性值 作为选择器
+        style.selectors = property.map((m) => m.trim().toLowerCase());
+      }
+    });
+
     // 生成最终的CSS
     finalStyles.forEach((style) => {
-      const selector = style.selectors.join(", ");
+      const selector = style.selectors
+        .map((s) => `.${CLASS_PREFIX} ${s}`)
+        .join(", ");
       const rules = Array.from(style.rules.values())
         .map(
           (rule) =>
@@ -679,16 +677,44 @@ const useCreateComponent = () => {
           .join("\n");
 
         if (rules) {
-          css += `${selector} {\n${rules}\n}\n\n`;
+          // 为伪类/伪元素选择器添加父类前缀
+          const selectorWithParent = `.${CLASS_PREFIX} ${selector}`;
+          css += `${selectorWithParent} {\n${rules}\n}\n\n`;
         }
       });
     });
 
-    return css;
+    // 获取单一属性的选择器及其样式
+    const singleStyle = Array.from(finalStyles).filter(([, style]) => {
+      return Array.from(style.rules.values()).length === 1;
+    });
+
+    return { cssString: css, singleStyle };
+  };
+
+  // 判断单属性 放置在哪个节点上
+  const includeStyleMap = (
+    dataClassId: string,
+    singleStyle: singleStyleType
+  ) => {
+    const curKey = singleStyle.find(([key]) => {
+      return key
+        .split(",")
+        .map((cl) => cl.replace(".", "").trim())
+        .includes(dataClassId);
+    });
+    if (curKey) {
+      const [, style] = curKey;
+      return style.selectors.join("");
+    }
+    return "";
   };
 
   // 清理并转换HTML元素
-  const formatElement = (el: HTMLElement): HTMLElement => {
+  const formatElement = (
+    el: HTMLElement,
+    singleStyle: singleStyleType
+  ): HTMLElement => {
     const tagName = el.tagName.toLowerCase();
     // 获取DATA_CLASS_ID并设置为class
     const dataClassId = el.getAttribute(DATA_CLASS_ID);
@@ -723,13 +749,20 @@ const useCreateComponent = () => {
 
     // 重新设置类名
     if (dataClassId) {
-      el.className = dataClassId;
+      const classes = includeStyleMap(dataClassId!, singleStyle).replace(
+        ".",
+        ""
+      );
+
+      // 将原有的 dataClassId 和新的样式类名组合
+      const classNames = [dataClassId, classes].filter(Boolean).join(" ");
+      el.className = classNames;
     }
 
     // 递归处理子元素
     Array.from(el.children).forEach((child) => {
       if (child instanceof HTMLElement) {
-        formatElement(child);
+        formatElement(child, singleStyle);
       }
     });
 
@@ -764,40 +797,6 @@ const useCreateComponent = () => {
       `;
   };
 
-  // 使用requestAnimationFrame进行分批处理，以避免阻塞主线程
-  const processWithRAF = async (tasks: Array<() => any>) => {
-    return new Promise((resolve) => {
-      let index = 0;
-      const results: any[] = [];
-
-      const process = () => {
-        const start = performance.now();
-
-        // 在每一帧中执行尽可能多的任务，但不超过16ms
-        while (index < tasks.length && performance.now() - start < 16) {
-          try {
-            const result = tasks[index]();
-            results.push(result);
-          } catch (error) {
-            console.error(`Task ${index} failed:`, error);
-          }
-
-          index++;
-        }
-
-        if (index < tasks.length) {
-          // 如果还有任务，继续在下一帧执行
-          requestAnimationFrame(process);
-        } else {
-          // 所有任务完成
-          resolve(results);
-        }
-      };
-
-      requestAnimationFrame(process);
-    });
-  };
-
   // 清理其他资源
   const cleanup = () => {
     index = -1;
@@ -822,18 +821,19 @@ const useCreateComponent = () => {
     const clonedEl = cloneElement(el);
     // 生成css 树
     const cssTree = collectStyleTree(el);
-
-    // 处理dome 结构
-    const elements = formatElement(clonedEl);
     // css 树生成 css 样式表
-    const cssString = generateCssUpdate(cssTree);
+    const { cssString, singleStyle } = generateCssUpdate(cssTree);
+    // 处理dome 结构
+    const elements = formatElement(clonedEl, singleStyle);
+
     // css + dom 结构 生成完整的html 文档
     const fullHtml = generateComponentTree({ css: cssString, html: elements });
 
     setCss(cssString);
     setHtmlStr(elements);
     setFullHtml(fullHtml);
-    // console.log("cssTree", cssTree);
+    console.log("elements", elements);
+    console.log("cssTree", cssTree);
     // console.log("cssString", cssString);
 
     // message.destroy()
