@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { doLog, classifyProps } from "../utils";
+import { doLog } from "../utils";
 import {
   PSEUDO_CONFIG,
   STYLE_WHITELIST,
@@ -537,7 +537,6 @@ const useCreateComponent = () => {
 
     const levelMap = groupNodesByLevel(node);
 
-    console.log("levelMap", levelMap);
 
     // 用于最终合并的样式映
     const finalStyles = new Map<string, MergedStyle>();
@@ -668,7 +667,6 @@ const useCreateComponent = () => {
       });
     });
 
-    console.log("finalStyles", finalStyles);
 
     //  这里对样式只有一个属性的进行处理
     finalStyles.forEach((style) => {

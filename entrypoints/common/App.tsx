@@ -24,9 +24,9 @@ const App = () => {
   const selectChange = (ClickDir: ClickAction, el: HTMLElement) => {
     setElement(el);
     if (ClickDir === CLICK_DIR[0]) {
-      createFullHtml(el);
-    } else if (ClickDir === CLICK_DIR[2]) {
       setSelect(true);
+    } else if (ClickDir === CLICK_DIR[2]) {
+      createFullHtml(el);
     }
     setHover(false);
   };
@@ -59,21 +59,36 @@ const App = () => {
     const { type } = message;
     switch (type) {
       case "PluginStageChange":
-        const msg = !remove ? "插件关闭" : "插件开启"
+        const msg = !remove ? "插件关闭" : "插件开启";
         doLog(msg);
         setRemove(!remove);
         setHover(true);
-        setSelect(false)
+        setSelect(false);
         break;
     }
   });
 
   const selectParent = () => {
-    if (element) {
-      const parent = element.parentElement;
-      parent && createFullHtml(parent);
-      if (!parent) antMessage.error("当前节点没有父级节点");
-    }
+    setElement((currentElement) => {
+      if (!currentElement) {
+        antMessage.error("没有选中的节点");
+        return currentElement;
+      }
+
+      const parent = currentElement.parentElement;
+
+      if (!parent) {
+        antMessage.error("当前节点没有父级节点");
+        return currentElement;
+      }
+
+      if (parent.tagName === "BODY") {
+        antMessage.error("父节点已经是body了");
+        return currentElement;
+      }
+
+      return parent;
+    });
   };
 
   return (
@@ -86,13 +101,8 @@ const App = () => {
             <SelectElement
               el={element}
               selectParent={selectParent}
-              selectCurrent={() => {
-                element && createFullHtml(element);
-              }}
-              resSelect={() => {
-                setElement(null);
-                setSelect(false);
-                setHover(true);
+              onChange={(curEl) => {
+                createFullHtml(curEl);
               }}
             />
           )}

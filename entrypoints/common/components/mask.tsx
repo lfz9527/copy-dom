@@ -14,7 +14,7 @@ interface Prop {
 
 const Mask: React.FC<Prop> = ({
   post,
-  zIndex = 99999,
+  zIndex = 999,
   stroke = "red",
   fill = "#ffc0cb66",
 }) => {
