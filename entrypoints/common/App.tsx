@@ -100,6 +100,10 @@ const App = () => {
           {!hover && select && (
             <SelectElement
               el={element}
+              resSelect={()=>{
+                setHover(true);
+                setSelect(false);
+              }}
               selectParent={selectParent}
               onChange={(curEl) => {
                 createFullHtml(curEl);

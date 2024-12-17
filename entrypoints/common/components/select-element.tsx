@@ -10,7 +10,7 @@ interface Prop {
   selectParent: () => void;
   selectCurrent?: () => void;
   resSelect?: () => void;
-  onChange: (curEl:HTMLElement) => void;
+  onChange: (curEl: HTMLElement) => void;
 }
 
 const SelectElement: React.FC<Prop> = ({
@@ -25,18 +25,18 @@ const SelectElement: React.FC<Prop> = ({
   const submit = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('el',el);
-    
+
     onChange && onChange(el!);
   };
 
+  const handleClick = (e: any) => {
+    const target = e.target;
+    if (target.tagName.toLowerCase() === "jy-copy-dom") return;
 
-  const handleClick = (e:any) =>{
     e.preventDefault();
     e.stopPropagation();
-    selectParent()
-  }
-
+    resSelect && resSelect();
+  };
 
   useEffect(() => {
     // 禁用右键菜单并显示自定义内容
@@ -45,9 +45,13 @@ const SelectElement: React.FC<Prop> = ({
 
     return () => {
       document.removeEventListener("contextmenu", submit);
-      document.removeEventListener("click",handleClick, true)
+      document.removeEventListener("click", handleClick, true);
     };
   }, [el]);
+
+  const handleParent = (e: any) => {
+    selectParent();
+  };
 
   return (
     <>
@@ -59,7 +63,11 @@ const SelectElement: React.FC<Prop> = ({
           zIndex: 1000,
         }}
       >
-        <div className="tool-item" onClick={selectParent}>
+        <div
+          id="select-site-parent-jy"
+          className="tool-item"
+          onClick={handleParent}
+        >
           选择父级节点
         </div>
         {/* <div className="tool-item" onClick={selectCurrent}>
